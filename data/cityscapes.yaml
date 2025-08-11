@@ -1,4 +1,4 @@
-path: /home/waue0920/dataset/yolo/datasets/cityscapes
+path: ../datasets/cityscapes
 train: images/train
 val: images/val
 nc: 8

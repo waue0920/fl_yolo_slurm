@@ -14,3 +14,6 @@ yolo9t2_ngc2306_20241226.sif
 !/datasets/README.md
 /federated_data/*
 !/federated_data/README.md
+
+# Ignore jupyter notebook checkpoint directories
+.ipynb_checkpoints/
