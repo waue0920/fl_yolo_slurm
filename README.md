@@ -99,17 +99,23 @@ git submodule update --init --recursive
 ```bash
 ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS>
 ```
-
-### 範例
+* 全自動模式 範例
 ```bash
 # 使用 kitti 資料集，4 個客戶端，進行 2 輪聯邦學習
 ./src/orchestrate.sh kitti 4 2
 ```
 > **提示**: 若要包含最終的模型驗證，請加上 `--val` 旗標。
 
+* 手動模式
+    - 以下指令會產生出 sop.sh ，可以照著這份腳本一行一行操作
+```bash
+# 使用 kitti 資料集，4 個客戶端，進行 2 輪聯邦學習
+./src/orchestrate.sh kitti 4 2 --manual --val > sop.sh
+```
+
 ---
 
-## 📖 手動執行標準作業程序 (SOP)
+### 📖 手動模式的進階說明 (SOP)
 
 此方法提供最高的控制權，便於偵錯與詳細觀察。詳細步驟請參考：
 - **[📖 手動執行標準作業程序 (SOP) 指南](./readme_sop.md)**
