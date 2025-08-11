@@ -1,4 +1,4 @@
-path: /home/waue0920/dataset/yolo/datasets/sim10k
+path: ../datasets/sim10k
 train: images/train
 val: images/val
 nc: 8

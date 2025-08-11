@@ -1,5 +1,5 @@
 # data/kitti.yaml
-path: /home/waue0920/dataset/yolo/datasets/kitti
+path: ../datasets/kitti
 
 train: images/train
 val: images/val
