@@ -204,6 +204,7 @@ round_2:
 ```
 
 # 8個客戶端，進行3輪聯邦學習，生成手動執行文檔
+```
 ./orchestrate.sh cityscapes 8 3 --manual > cityscapes_sop.sh
 ```
 
