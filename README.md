@@ -138,3 +138,25 @@ Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual
 **最後更新**：2025-08-12  
 **版本**：v2.1 (導覽版)  
 **維護者**：nchc/waue0920
+
+---
+
+## 📸 執行結果快照 (Execution Result Snapshot)
+
+以下是聯邦學習過程中的一些視覺化結果，包含模型驗證成效與訓練指標。
+
+### 1. 模型驗證成果 (Validation Result)
+這是使用 Cityscapes 資料集進行 4 個客戶端、5 輪聯邦學習後，對驗證圖片進行物件偵測的結果。
+![Validation on Cityscapes](pics/cityscape_c4_r5_val.jpg)
+
+### 2. 訓練指標 (依聯邦輪次)
+下圖顯示了在 5 個聯邦輪次中，各項指標 (如 mAP50, mAP50-95) 的變化趨勢。
+![Metrics by Round](pics/cityscape_c4_r5_e50_byRound.png)
+
+### 3. 訓練指標 (依訓練週期)
+下圖將所有客戶端的訓練週期 (Epoch) 連續繪製，展示了模型在整個訓練過程中的學習曲線。
+![Metrics by Epoch](pics/cityscape_c4_r5_e50_byEpoch.png)
+
+### 4. Wandb 儀表板
+Wandb 提供了詳細的實驗追蹤，下圖是本次實驗在 Wandb 儀表板上的部分截圖。
+![Wandb Dashboard](pics/cityscape_c4_r5_e50_Wandb.png)
