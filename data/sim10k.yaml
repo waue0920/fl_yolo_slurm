@@ -1,0 +1,5 @@
+path: /home/waue0920/dataset/yolo/datasets/sim10k
+train: images/train
+val: images/val
+nc: 8
+names: [car, motorcycle, bike, rider, person, bus, train, truck]
