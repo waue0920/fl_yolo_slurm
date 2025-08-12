@@ -17,3 +17,9 @@ yolo9t2_ngc2306_20241226.sif
 
 # Ignore jupyter notebook checkpoint directories
 .ipynb_checkpoints/
+
+
+# 忽略 python 的快取檔案與快取資料夾
+__pycache__/
+*.pyc
+*.pyo

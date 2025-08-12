@@ -62,8 +62,8 @@ git submodule update --init --recursive
 
 ### 2. 準備必要檔案
 確保以下檔案已放置於專案根目錄：
-- **Singularity 映像檔**: `yolo9t2_ngc2306_20241226.sif`
-- **初始權重**: `yolov9-c.pt`
+- **Singularity 映像檔**: `yolo9t2_ngc2306_20241226.sif` [twcc-cos](https://cos.twcc.ai/wauehpcproject/yolo9t2_ngc2306_20241226.sif)
+- **初始權重**: `yolov9-c.pt` [official](https://github.com/WongKinYiu/yolov9/releases/download/v0.1/yolov9-c.pt)
 
 ### 3. 準備資料集
 將您的資料集放置在 `datasets/` 目錄下，並在 `data/` 中建立對應的 `.yaml` 設定檔。詳細說明請參考 `datasets/README.md`。
@@ -71,16 +71,14 @@ git submodule update --init --recursive
 ### 4. 目錄結構
 ```
 .
-├── README.md               # 舊版說明文件
-├── README_v2.md            # 本文件 (新版主入口)
+├── README.md               # 說明文件
 ├── readme_sop.md           # 📖 手動執行 SOP 指南
 ├── readme_val.md           # 📊 模型驗證指南
 ├── readme_debug.md         # 🔍 偵錯指南
 ├── yolov9/                 # YOLOv9 原始碼 (Git Submodule)
-├── src/                    # 主要腳本目錄
-│   ├── orchestrate.sh      # 主協調腳本
-│   ├── data_prepare.py     # 資料分割腳本
-│   └── ...
+├── src/                    # 主要目錄
+│   ├── orchestrate.sh      # 主程式
+│   └── ...                 # 其他輔助腳本
 ├── data/                   # 資料集 YAML 設定檔
 ├── datasets/               # 放置原始資料集
 ├── federated_data/         # 存放分割後的客戶端資料

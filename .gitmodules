@@ -1,3 +1,4 @@
 [submodule "yolov9"]
 	path = yolov9
-	url = https://github.com/WongKinYiu/yolov9.git
+    url = https://github.com/WongKinYiu/yolov9.git
+    ignore = all
