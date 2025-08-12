@@ -8,7 +8,7 @@
 * Foggy
 
 可自行至官方網站下載，或使用此測試包 
-* yolo_traffic_datasets_5in1_26G.tar [twcc-cos](https://cos.twcc.ai/wauehpcproject/yolo_traffic_datasets_5in1_26G.tar)
+* yolo_traffic_datasets_5in1_26G.tar ([twcc-cos載點](https://cos.twcc.ai/wauehpcproject/yolo_traffic_datasets_5in1_26G.tar))
 
 
 ``` bash

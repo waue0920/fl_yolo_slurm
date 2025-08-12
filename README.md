@@ -56,17 +56,19 @@ Round 3: w_s_r2.pt  → [Client1, Client2, Client3, Client4] → w_s_r3.pt
 git clone <repository-url>
 cd fl_yolo_slurm
 
-# 初始化並下載 yolov9 子模組
+# 下載 yolov9 模組
+# (也可直接  git clone https://github.com/WongKinYiu/yolov9.git  )
 git submodule update --init --recursive
 ```
 
 ### 2. 準備必要檔案
 確保以下檔案已放置於專案根目錄：
-- **Singularity 映像檔**: `yolo9t2_ngc2306_20241226.sif` [twcc-cos](https://cos.twcc.ai/wauehpcproject/yolo9t2_ngc2306_20241226.sif)
-- **初始權重**: `yolov9-c.pt` [official](https://github.com/WongKinYiu/yolov9/releases/download/v0.1/yolov9-c.pt)
+- **Singularity 映像檔**: `yolo9t2_ngc2306_20241226.sif` ([twcc-cos載點](https://cos.twcc.ai/wauehpcproject/yolo9t2_ngc2306_20241226.sif))
+- **初始權重**: `yolov9-c.pt` ([official載點](https://github.com/WongKinYiu/yolov9/releases/download/v0.1/yolov9-c.pt))
 
 ### 3. 準備資料集
-將您的資料集放置在 `datasets/` 目錄下，並在 `data/` 中建立對應的 `.yaml` 設定檔。詳細說明請參考 `datasets/README.md`。
+將您的資料集放置在 `datasets/` 目錄下，並在 `data/` 中建立對應的 `.yaml` 設定檔。
+- **[📖 資料集準備指南](./readme_datasets.md)**
 
 ### 4. 目錄結構
 ```
@@ -109,6 +111,7 @@ Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual
 * 執行畫面，會自動偵測是否要分割資料集，然後發起n+1個slurm程序
     * n client train (parallel)
     * 1 server aggregate  (waiting for client complete)
+
 ![slurm](pics/sim10k_c4_r5_slurm.png)
 ---
 
@@ -122,6 +125,7 @@ Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual
 
 * 此方法目的在於方便偵錯與詳細觀察。詳細步驟請參考：
 - **[📖 手動執行標準作業程序 (SOP) 指南](./readme_sop.md)**
+
 ![sop](pics/kitti_c4_r5_sop.png)
 
 ---
@@ -130,6 +134,7 @@ Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual
 
 本系統提供對聯邦學習模型效能的完整分析。詳細的啟用與操作方式請參考：
 - **[📊 模型驗證說明文件](./readme_val.md)**
+
 ![validation](pics/kitti_c4_r3_val.png)
 
 ---
