@@ -1,11 +1,43 @@
 # Datasets
 
-This directory is intended to store the raw datasets used in the project (e.g., KITTI, BDD100k).
+目前測試支援五種交通資料集
+* KITTI
+* SIM10K
+* BDD100K
+* Cityscapes
+* Foggy
 
-**This directory is intentionally left empty in the Git repository to avoid storing large files.**
+可自行至官方網站下載，或使用此測試包 
+* yolo_traffic_datasets_5in1_26G.tar [twcc-cos](https://cos.twcc.ai/wauehpcproject/yolo_traffic_datasets_5in1_26G.tar)
 
-## Setup Instructions
 
-Please download the required datasets and place them here according to the structure expected by the data preparation scripts.
-
-Refer to the main `README.md` or the specific dataset configuration files (e.g., `data/kitti.yaml`) for download links and expected directory structures.
+``` bash
+./
+├── data
+│   ├── bdd.yaml
+│   ├── cityscapes.yaml
+│   ├── foggy.yaml
+│   ├── kitti.yaml
+│   └── sim10k.yaml
+├── datasets
+│   ├── bdd100k
+│   │   ├── VOC
+│   │   ├── images
+│   │   └── labels
+│   ├── cityscapes
+│   │   ├── VOC
+│   │   ├── images
+│   │   └── labels
+│   ├── foggy
+│   │   ├── VOC
+│   │   ├── images
+│   │   └── labels
+│   ├── kitti
+│   │   ├── VOC
+│   │   ├── images
+│   │   └── labels
+│   └── sim10k
+│       ├── VOC
+│       ├── images
+│       └── labels
+```
