@@ -105,7 +105,10 @@ Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual
 ./src/orchestrate.sh kitti 4 2
 ```
 > **提示**: 若要包含最終的模型驗證，請加上 `--val` 旗標。
-
+* 執行畫面，會自動偵測是否要分割資料集，然後發起n+1個slurm程序
+    * n client train (parallel)
+    * 1 server aggregate  (waiting for client complete)
+![slurm](pics/sim10k_c4_r5_slurm.jpg)
 ---
 
 ### 📖 手動模式的進階說明 (SOP)
@@ -118,6 +121,7 @@ Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual
 
 * 此方法目的在於方便偵錯與詳細觀察。詳細步驟請參考：
 - **[📖 手動執行標準作業程序 (SOP) 指南](./readme_sop.md)**
+![sop](pics/sim10k_c4_r5_sop.jpg)
 
 ---
 
@@ -125,6 +129,7 @@ Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual
 
 本系統提供對聯邦學習模型效能的完整分析。詳細的啟用與操作方式請參考：
 - **[📊 模型驗證說明文件](./readme_val.md)**
+![validation](pics/kitti_c4_r3_val.png)
 
 ---
 
