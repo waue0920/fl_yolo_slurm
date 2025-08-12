@@ -22,9 +22,11 @@
 
 ## 🎯 系統概述
 
-本框架旨在實現一個完整的聯邦式學習 (Federated Learning) 流程。初始模型權重 (`yolov9-c.pt`) 會分發給多個客戶端 (Client)，客戶端在各自的資料子集上進行訓練後，將更新後的權重傳回伺服器進行聚合 (Federated Averaging)，產生新一輪的全域模型。此過程會重複多個輪次，以期在保護資料隱私的前提下，訓練出一個高效能的全域模型。
+本框架旨在使用國網中心的 HPC 叢集環境 (TWCC / N5)，實現一個完整的聯邦式學習 (Federated Learning) 流程。
 
-### 聯邦學習流程示意
+本專案預設使用初始模型權重 (`yolov9-c.pt`) 做pretrai，分發給多個客戶端 (Client)，客戶端在各自的資料子集上進行訓練後，將更新後的權重傳回伺服器進行聚合 (Federated Averaging)，產生新一輪的全域模型。此過程會重複多個輪次，以期在保護資料隱私的前提下，訓練出一個高效能的全域模型。
+
+* 聯邦學習流程示意
 ```
 Round 1: yolov9-c.pt → [Client1, Client2, Client3, Client4] → w_s_r1.pt
 Round 2: w_s_r1.pt  → [Client1, Client2, Client3, Client4] → w_s_r2.pt
@@ -35,13 +37,14 @@ Round 3: w_s_r2.pt  → [Client1, Client2, Client3, Client4] → w_s_r3.pt
 ---
 
 ## 🛠️ 環境需求
-
-- **作業系統**: Linux
-- **作業調度器**: Slurm Workload Manager
-- **容器引擎**: Singularity
-- **Python**: ≥ 3.8
-- **GPU**: NVIDIA GPU (支援 CUDA)
-- **主要依賴**: PyTorch (≥ 2.1.0), Wandb (實驗追蹤)
+- **執行環境** : NCHC [TWCC](https://www.nchc.org.tw/Page?itemid=6&mid=10)
+  - **作業系統**: Linux
+  - **作業調度器**: Slurm Workload Manager
+  - **容器引擎**: Singularity
+  - **Python**: ≥ 3.8
+  - GPU: NVIDIA GPU (支援 CUDA)
+  - **Pytorch**: PyTorch (≥ 2.1.0)
+  - 實驗追蹤 : Wandb 
 
 ---
 
