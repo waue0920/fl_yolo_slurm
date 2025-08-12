@@ -108,7 +108,7 @@ Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual
 * 執行畫面，會自動偵測是否要分割資料集，然後發起n+1個slurm程序
     * n client train (parallel)
     * 1 server aggregate  (waiting for client complete)
-![slurm](pics/sim10k_c4_r5_slurm.jpg)
+![slurm](pics/sim10k_c4_r5_slurm.png)
 ---
 
 ### 📖 手動模式的進階說明 (SOP)
@@ -121,7 +121,7 @@ Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual
 
 * 此方法目的在於方便偵錯與詳細觀察。詳細步驟請參考：
 - **[📖 手動執行標準作業程序 (SOP) 指南](./readme_sop.md)**
-![sop](pics/sim10k_c4_r5_sop.jpg)
+![sop](pics/kitti_c4_r5_sop.png)
 
 ---
 
