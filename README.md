@@ -102,7 +102,15 @@ git submodule update --init --recursive
 ```bash
 Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual] [--val]
 ```
-### 全自動模式 範例
+### 全自動模式 (所有工作都在工作節點執行)
+```bash
+# 使用 kitti 資料集，4 個客戶端，進行 2 輪聯邦學習
+sbatch src/run.sb kitti 4 5
+sbatch src/run.sb cityscapes 4 5 --val
+```
+
+
+### 全自動模式 (v1 少數工作在登入節點執行)
 ```bash
 # 使用 kitti 資料集，4 個客戶端，進行 2 輪聯邦學習
 ./src/orchestrate.sh kitti 4 2
