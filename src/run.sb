@@ -3,11 +3,11 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=4
-#SBATCH --partition=gp2d      ## Partition: gtest | gp2d
+#SBATCH --partition=gp1d      ## Partition: gtest | gp2d
 #SBATCH --account="GOV113038"  ## iService_ID Project ID
 #SBATCH --job-name=fl_yolo_slurm
-#SBATCH --output=experiments/%x_%j.out
-#SBATCH --error=experiments/%x_%j.err
+#SBATCH --output=experiments/slurm.out
+#SBATCH --error=experiments/slurm.out
 
 # ===================================================================================
 # Orchestrator Slurm Script for Federated Learning Experiments (Auto Mode)
@@ -18,6 +18,8 @@
 # sbatch src/run.sb kitti 4 5
 # sbatch src/run.sb cityscapes 4 5 --val
 # ===================================================================================
+
+export WROOT="/home/waue0920/waue/git/fl_yolo_slurm"
 
 set -e
 set -o pipefail
@@ -60,12 +62,13 @@ TOTAL_ROUNDS=$3
 INITIAL_WEIGHTS="yolov9-c.pt"
 EXTRA_ARGS="--epochs 50 --batch 8"  # 可根據需求調整
 
-SRC_DIR=$(realpath "$(dirname "$0")")
-WROOT=$(realpath "${SRC_DIR}/..")
+SRC_DIR="${WROOT}/src"
+
 cd "${WROOT}"
 
 # --- 2. Generate Experiment ID ---
 EXPERIMENTS_BASE_DIR="experiments"
+
 mkdir -p ${EXPERIMENTS_BASE_DIR}
 RUN_COUNT=$(find "${EXPERIMENTS_BASE_DIR}" -maxdepth 1 -type d | wc -l)
 RUN_NUM=$((RUN_COUNT))
@@ -106,7 +109,7 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
     # 直接在這裡用 sbatch --wrap submit client job
     client_job_ids=""
     for c in $(seq 1 ${CLIENT_NUM}); do
-        DATA_YAML="federated_data/${DATASET_NAME}_${CLIENT_NUM}/client${c}.yaml"
+        DATA_YAML="federated_data/${DATASET_NAME}_${CLIENT_NUM}/c${c}.yaml"
         WEIGHTS_IN="${current_weights}"
         PROJECT_OUT="${EXP_DIR}/client_outputs/${EXP_ID}"
         NAME_OUT="r${r}_c${c}"
@@ -114,21 +117,23 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
         LOG_OUT="${EXP_DIR}/slurm_logs/r${r}_c${c}.out"
         LOG_ERR="${EXP_DIR}/slurm_logs/r${r}_c${c}.err"
 
-        sbatch_cmd="sbatch --job-name=cli_r${r}_c${c} --output=${LOG_OUT} \
-            --error=${LOG_ERR} --partition=gp1d --gpus-per-node=1 --cpus-per-task=4 \
-            --nodes=1 --account=GOV113038 --wrap '
-        export WROOT=\"${WROOT}\"; \
-        SINGULARITY_IMG=\"${WROOT}/yolo9t2_ngc2306_20241226.sif\"; \
-        MODEL_CFG=\"${WROOT}/yolov9/models/detect/yolov9-c.yaml\"; \
-        singularity exec --nv --bind ${WROOT}:${WROOT} \
-            --bind /home/waue0920/dataset/yolo:/home/waue0920/dataset/yolo \"${SINGULARITY_IMG}\" \
-        python3 \"${WROOT}/yolov9/train_dual.py\" \
-            --weights \"${WEIGHTS_IN}\" \
-            --data \"${WROOT}/${DATA_YAML}\" \
-            --cfg \"${MODEL_CFG}\" \
-            --project \"${PROJECT_OUT}\" \
-            --name \"${NAME_OUT}\" \
-            ${EXTRA_ARGS}'"
+        # 曾經嘗試用 sbatch --wrap 來提交 client job，但發現python3在哪裡都不知道
+        # 秀 FATAL: python3: executable file not found in $PATH
+        # 因此改回使用 sbatch 執行 client_train.sh 提交 client job
+        sbatch_cmd="sbatch --job-name=cli_r${r}_c${c} \
+            --output=${LOG_OUT} \
+            --error=${LOG_ERR} \
+            --partition=gp1d \
+            --gpus-per-node=1 \
+            --cpus-per-task=4 \
+            --nodes=1 \
+            --account=GOV113038 \
+            ${SRC_DIR}/client_train.sh \
+                --data-yaml ${DATA_YAML} \
+                --weights-in ${WEIGHTS_IN} \
+                --project-out ${PROJECT_OUT} \
+                --name-out ${NAME_OUT} \
+                --extra-args \"${EXTRA_ARGS}\""
 
         jobid=$(eval ${sbatch_cmd} | awk '{print $4}')
         client_job_ids+="${jobid} "
