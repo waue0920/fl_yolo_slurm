@@ -1,0 +1,172 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --gpus-per-node=1
+#SBATCH --cpus-per-task=4
+#SBATCH --partition=gp2d      ## Partition: gtest | gp2d
+#SBATCH --account="GOV113038"  ## iService_ID Project ID
+#SBATCH --job-name=fl_yolo_slurm
+#SBATCH --output=experiments/%x_%j.out
+#SBATCH --error=experiments/%x_%j.err
+
+# ===================================================================================
+# Orchestrator Slurm Script for Federated Learning Experiments (Auto Mode)
+# ===================================================================================
+# Usage: sbatch src/run.sb <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--val]
+# ===================================================================================
+# ex :
+# sbatch src/run.sb kitti 4 5
+# sbatch src/run.sb cityscapes 4 5 --val
+# ===================================================================================
+
+set -e
+set -o pipefail
+
+### 主邏輯說明
+## (登入節點 ln )
+## 1. 執行 sbatch run.sb
+## 2. 跟slurm 要了一個工作節點 w1
+## (工作節點 w1)
+## 3. 在工作節點上，做分資料集的檢查
+## 4. 開始執行每一round 迴圈
+##   4.1 client_train.sh 的邏輯，假設有四個 client ，因此從 w1 平行發出四個 sbatch train job ，
+## 假設每個sbatch job 都個要一個 node ，即 {w2, w3, w4, w5}
+##   4.2 (工作節點 w2) c1 訓練 ;  (工作節點 w3) c2 訓練 ;  (工作節點 w4) c3 訓練 ;  (工作節點 w5) c4 訓練
+##   4.3 (工作節點 w1) 會等到所有job 都算完，才開始做 fl 的 aggregate ，也就是你剛剛改的那段。
+## 5. 這個 round 結束
+## 6. 看是否執行 validation ...
+### 說明結束
+
+# --- 1. Argument Parsing ---
+VALIDATION_ENABLED=false
+args=("$@")
+filtered_args=()
+for arg in "${args[@]}"; do
+    if [[ "$arg" == "--val" ]]; then
+        VALIDATION_ENABLED=true
+    else
+        filtered_args+=("$arg")
+    fi
+done
+set -- "${filtered_args[@]}"
+
+if [ "$#" -ne 3 ]; then
+    echo "Usage: sbatch src/run.sb <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--val]"
+    exit 1
+fi
+DATASET_NAME=$1
+CLIENT_NUM=$2
+TOTAL_ROUNDS=$3
+INITIAL_WEIGHTS="yolov9-c.pt"
+EXTRA_ARGS="--epochs 50 --batch 8"  # 可根據需求調整
+
+SRC_DIR=$(realpath "$(dirname "$0")")
+WROOT=$(realpath "${SRC_DIR}/..")
+cd "${WROOT}"
+
+# --- 2. Generate Experiment ID ---
+EXPERIMENTS_BASE_DIR="experiments"
+mkdir -p ${EXPERIMENTS_BASE_DIR}
+RUN_COUNT=$(find "${EXPERIMENTS_BASE_DIR}" -maxdepth 1 -type d | wc -l)
+RUN_NUM=$((RUN_COUNT))
+TIMESTAMP=$(date +%Y%m%d%H%M)
+EXP_ID="${RUN_NUM}_${DATASET_NAME}_${CLIENT_NUM}C_${TOTAL_ROUNDS}R_${TIMESTAMP}"
+EXP_DIR="${EXPERIMENTS_BASE_DIR}/${EXP_ID}"
+
+# --- 3. Create Directories ---
+mkdir -p "${EXP_DIR}/slurm_logs"
+mkdir -p "${EXP_DIR}/client_outputs/${EXP_ID}"
+mkdir -p "${EXP_DIR}/aggregated_weights"
+mkdir -p "${EXP_DIR}/fed_avg_logs"
+
+# --- 4. Setup Logging ---
+exec > >(tee -a "${EXP_DIR}/orchestrator.log")
+exec 2> >(tee -a "${EXP_DIR}/orchestrator.log" >&2)
+
+echo "######################################################################"
+echo "##  STARTING NEW PARALLEL FEDERATED LEARNING EXPERIMENT (SLURM AUTO)"
+echo "##  Experiment ID: ${EXP_ID}"
+echo "######################################################################"
+
+echo -e "\n--- STEP 1: Preparing data for ${CLIENT_NUM} clients... ---"
+python3 "${SRC_DIR}/data_prepare.py" --dataset-name "${DATASET_NAME}" --num-clients "${CLIENT_NUM}"
+echo "--- Data preparation step complete. ---"
+
+echo -e "\n--- STEP 2: Starting Federated Learning Rounds... ---"
+for r in $(seq 1 ${TOTAL_ROUNDS}); do
+    echo -e "\n==================[ ROUND ${r} / ${TOTAL_ROUNDS} ]=================="
+    if [ "${r}" -eq 1 ]; then
+        current_weights="${WROOT}/${INITIAL_WEIGHTS}"
+    else
+        prev_round=$((r - 1))
+        current_weights="${WROOT}/${EXP_DIR}/aggregated_weights/w_s_r${prev_round}.pt"
+    fi
+    echo "Using weights for this round: ${current_weights}"
+
+    # 直接在這裡用 sbatch --wrap submit client job
+    client_job_ids=""
+    for c in $(seq 1 ${CLIENT_NUM}); do
+        DATA_YAML="federated_data/${DATASET_NAME}_${CLIENT_NUM}/client${c}.yaml"
+        WEIGHTS_IN="${current_weights}"
+        PROJECT_OUT="${EXP_DIR}/client_outputs/${EXP_ID}"
+        NAME_OUT="r${r}_c${c}"
+
+        LOG_OUT="${EXP_DIR}/slurm_logs/r${r}_c${c}.out"
+        LOG_ERR="${EXP_DIR}/slurm_logs/r${r}_c${c}.err"
+
+        sbatch_cmd="sbatch --job-name=cli_r${r}_c${c} --output=${LOG_OUT} \
+            --error=${LOG_ERR} --partition=gp1d --gpus-per-node=1 --cpus-per-task=4 \
+            --nodes=1 --account=GOV113038 --wrap '
+        export WROOT=\"${WROOT}\"; \
+        SINGULARITY_IMG=\"${WROOT}/yolo9t2_ngc2306_20241226.sif\"; \
+        MODEL_CFG=\"${WROOT}/yolov9/models/detect/yolov9-c.yaml\"; \
+        singularity exec --nv --bind ${WROOT}:${WROOT} \
+            --bind /home/waue0920/dataset/yolo:/home/waue0920/dataset/yolo \"${SINGULARITY_IMG}\" \
+        python3 \"${WROOT}/yolov9/train_dual.py\" \
+            --weights \"${WEIGHTS_IN}\" \
+            --data \"${WROOT}/${DATA_YAML}\" \
+            --cfg \"${MODEL_CFG}\" \
+            --project \"${PROJECT_OUT}\" \
+            --name \"${NAME_OUT}\" \
+            ${EXTRA_ARGS}'"
+
+        jobid=$(eval ${sbatch_cmd} | awk '{print $4}')
+        client_job_ids+="${jobid} "
+    done
+
+    dependency_list=$(echo ${client_job_ids} | sed 's/ /:/g')
+    echo -e "\n--> All client jobs submitted. Dependency list: ${dependency_list}"
+    echo ">> Submitting federated averaging job, which will run after clients finish."
+
+    srun --dependency=afterok:${dependency_list} \
+        python3 "${SRC_DIR}/server_fedavg.py" \
+        --input-dir "${EXP_DIR}/client_outputs/${EXP_ID}" \
+        --output-file "${EXP_DIR}/aggregated_weights/w_s_r${r}.pt" \
+        --expected-clients "${CLIENT_NUM}" \
+        --round "${r}" \
+        > "${EXP_DIR}/fed_avg_logs/round_${r}.out" 2> "${EXP_DIR}/fed_avg_logs/round_${r}.err"
+    echo "--> Federated averaging for Round ${r} complete."
+done
+
+if [ "$VALIDATION_ENABLED" = true ]; then
+    echo -e "\n--- STEP 3: Running Model Validation ---"
+    echo ">> Validating all models (baseline + ${TOTAL_ROUNDS} rounds)..."
+    if python3 "${SRC_DIR}/validate_federated_model.py" \
+        --experiment-dir "${WROOT}/${EXP_DIR}" \
+        --data-config "data/${DATASET_NAME}.yaml" \
+        ; then
+        echo "--- Model validation complete. ---"
+        VALIDATION_MSG="##  Validation results: ${EXP_DIR}/validation/"
+    else
+        echo "Warning: Model validation failed, but experiment completed successfully."
+        VALIDATION_MSG="##  Validation: Failed (see logs above)"
+    fi
+else
+    VALIDATION_MSG="##  Validation: Skipped (use --val to enable)"
+fi
+
+echo -e "\n######################################################################"
+echo "##  AUTOMATED FEDERATED LEARNING EXPERIMENT COMPLETED"
+echo "##  Final model: ${EXP_DIR}/aggregated_weights/w_s_r${TOTAL_ROUNDS}.pt"
+echo "${VALIDATION_MSG}"
+echo "######################################################################"
