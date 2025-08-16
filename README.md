@@ -33,8 +33,7 @@ Round 2: w_s_r1.pt  → [Client1, Client2, Client3, Client4] → w_s_r2.pt
 Round 3: w_s_r2.pt  → [Client1, Client2, Client3, Client4] → w_s_r3.pt
 ...
 ```
-![FL Workflow](pics/fl_workflow.gif)
-
+![FL Workflow](pics/fl_hpc_overview.gif)
 
 ---
 
