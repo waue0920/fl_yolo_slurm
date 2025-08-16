@@ -33,6 +33,8 @@ Round 2: w_s_r1.pt  → [Client1, Client2, Client3, Client4] → w_s_r2.pt
 Round 3: w_s_r2.pt  → [Client1, Client2, Client3, Client4] → w_s_r3.pt
 ...
 ```
+![FL Workflow](pics/fl_workflow.gif)
+
 
 ---
 
@@ -94,23 +96,15 @@ git submodule update --init --recursive
 
 ---
 
-## 🚀 快速開始 (自動模式)
+## 🚀 快速開始
 
-這是最推薦的執行方式。此命令將自動完成資料準備、模型訓練、權重聚合等所有步驟。
-
-### 基本語法
-```bash
-Usage: ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--manual] [--val]
-```
 ### 全自動模式 (所有工作都在工作節點執行)
 ```bash
 # 使用 kitti 資料集，4 個客戶端，進行 2 輪聯邦學習
-sbatch src/run.sb kitti 4 5
-sbatch src/run.sb cityscapes 4 5 --val
+sbatch src/run.sb 
 ```
 
-
-### 全自動模式 (v1 少數工作在登入節點執行)
+### 全自動模式 (少數工作在登入節點執行)
 ```bash
 # 使用 kitti 資料集，4 個客戶端，進行 2 輪聯邦學習
 ./src/orchestrate.sh kitti 4 2

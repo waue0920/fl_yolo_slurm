@@ -1,10 +1,5 @@
 #!/bin/bash
-#SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --gpus-per-node=1
-#SBATCH --cpus-per-task=4
-#SBATCH --partition=gp1d      ## Partition: gtest | gp2d
-#SBATCH --account="GOV113038"  ## iService_ID Project ID
 
 # ===================================================================================
 # Generic Slurm Executor for a Client Training Task
@@ -16,6 +11,11 @@
 # are expected to be set by the calling script (e.g., orchestrator.sh) via
 # sbatch command-line options.
 # ===================================================================================
+
+# 先 source 專案根目錄的 env.sh
+source "${WROOT}/src/env.sh"
+
+
 
 # --- Argument Verification ---
 if [ "$#" -eq 0 ]; then

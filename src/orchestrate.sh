@@ -46,10 +46,7 @@ done
 set -- "${filtered_args[@]}"
 
 # --- 2. Environment and Path Setup ---
-SRC_DIR=$(realpath "$(dirname "$0")")
-WROOT=$(realpath "${SRC_DIR}/..")
-cd "${WROOT}"
-
+source "${WROOT}/src/env.sh"
 
 
 # --- 3. Configuration ---
@@ -67,19 +64,24 @@ TOTAL_ROUNDS=$3
 INITIAL_WEIGHTS="yolov9-c.pt"
 
 
-# --- 4. Generate Experiment ID ---
+
+# --- 4. Handle EXP_ID (from argument or auto-generate) ---
+EXP_ID=$4
 EXPERIMENTS_BASE_DIR="experiments"
-mkdir -p ${EXPERIMENTS_BASE_DIR}
-RUN_COUNT=$(find "${EXPERIMENTS_BASE_DIR}" -maxdepth 1 -type d | wc -l)
-RUN_NUM=$((RUN_COUNT))
-TIMESTAMP=$(date +%Y%m%d%H%M)
-EXP_ID="${RUN_NUM}_${DATASET_NAME}_${CLIENT_NUM}C_${TOTAL_ROUNDS}R_${TIMESTAMP}"
+if [ -z "$EXP_ID" ]; then
+    mkdir -p ${EXPERIMENTS_BASE_DIR}
+    RUN_COUNT=$(find "${EXPERIMENTS_BASE_DIR}" -maxdepth 1 -type d | wc -l)
+    RUN_NUM=$((RUN_COUNT))
+    TIMESTAMP=$(date +%Y%m%d%H%M)
+    EXP_ID="${RUN_NUM}_${DATASET_NAME}_${CLIENT_NUM}C_${TOTAL_ROUNDS}R_${TIMESTAMP}"
+fi
 EXP_DIR="${EXPERIMENTS_BASE_DIR}/${EXP_ID}"
 
 # --- 4.1. Export Experiment Variables ---
 # Export experiment identifiers for both modes
-export SRC_DIR="${SRC_DIR}"
+
 export WROOT="${WROOT}"
+export SRC_DIR="${WROOT}/src"
 export DATASET_NAME="${DATASET_NAME}"
 export CLIENT_NUM="${CLIENT_NUM}"
 export TOTAL_ROUNDS="${TOTAL_ROUNDS}"
@@ -291,7 +293,12 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
         --dependency "${dependency_list}" \
         --wait
 
-    echo "--> Federated averaging for Round ${r} complete."
+    if [ $? -ne 0 ]; then
+        echo "Error: Federated averaging failed for round ${r}. Stopping experiment."
+        exit 1
+    else
+        echo "--> Federated averaging for Round ${r} complete."
+    fi
 done
 
 # Run validation only if --val flag is provided
