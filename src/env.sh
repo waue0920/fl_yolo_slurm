@@ -16,7 +16,7 @@ export CLIENT_GPUS=2
 export CLIENT_CPUS=8
 
 # fl client 端的 訓練參數
-export EPOCHS=20
+export EPOCHS=100
 export BATCH_SIZE=16
 export IMG_SIZE=640
 
