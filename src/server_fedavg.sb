@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
+#SBATCH --partition=gtest      ## Partition: gtest | gp2d
+#SBATCH --account=GOV113038
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=4
-#SBATCH --partition=gp1d      ## Partition: gtest | gp2d
-#SBATCH --account="GOV113038"  ## iService_ID Project ID
+#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=1
 
 set -e
 echo "========================================================"

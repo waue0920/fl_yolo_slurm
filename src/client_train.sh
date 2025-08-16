@@ -44,6 +44,7 @@ if [ -z "${DATA_YAML}" ] || [ -z "${WEIGHTS_IN}" ] || [ -z "${PROJECT_OUT}" ] ||
     exit 1
 fi
 
+
 # --- 1. Project Root and Environment Setup ---
 # Use WROOT environment variable (set by user before execution)
 if [ -z "${WROOT}" ]; then
@@ -52,8 +53,26 @@ if [ -z "${WROOT}" ]; then
     exit 1
 fi
 
-SINGULARITY_IMG="${WROOT}/yolo9t2_ngc2306_20241226.sif"
+if [ -z "${SINGULARITY_IMG}" ]; then
+    SINGULARITY_IMG="${WROOT}/yolo9t2_ngc2306_20241226.sif"
+fi
+
 MODEL_CFG="${WROOT}/yolov9/models/detect/yolov9-c.yaml"
+
+## 下面這段多節電設定會導致port 衝突而failed
+# --- NCCL/SLURM 多節點環境變數設定 --- 
+# NPROC_PER_NODE=${SLURM_GPUS_ON_NODE:-1}
+# NNODES=${SLURM_NNODES:-1}
+# NODE_RANK=${SLURM_NODEID:-0}
+# if [ -z "$MASTER_ADDR" ]; then
+#     MASTER_ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
+# fi
+# if [ -z "$NGPU" ]; then
+#     NGPU=$(nvidia-smi -L | wc -l)
+# fi
+# MASTER_PORT=9527
+DEVICE_LIST=$(seq -s, 0 $(($NGPU-1)) | paste -sd, -)
+
 
 echo "================================================================================"
 echo ">> Starting Client Training (Decoupled)"
@@ -82,19 +101,39 @@ fi
 # --- 2. Execute YOLOv9 Training inside Singularity ---
 echo ">> Executing training command inside Singularity container..."
 
-# Note: All paths passed to train_dual.py must be from the perspective of
-# inside the container, which is the same as the host system due to the bind mount.
 singularity exec --nv \
     --bind ${WROOT}:${WROOT} \
     --bind /home/waue0920/dataset/yolo:/home/waue0920/dataset/yolo \
     "${SINGULARITY_IMG}" \
-python3 "${WROOT}/yolov9/train_dual.py" \
+python \
+    "${WROOT}/yolov9/train_dual.py" \
     --weights "${WEIGHTS_IN}" \
     --data "${WROOT}/${DATA_YAML}" \
     --cfg "${MODEL_CFG}" \
     --project "${PROJECT_OUT}" \
+    --device "${DEVICE_LIST}" \
     --name "${NAME_OUT}" \
-    ${EXTRA_ARGS} # Pass all other hparams
+    ${EXTRA_ARGS} 
+
+###  因為不同client 會搶相同port 的問題，因此跨節點暫時無解
+# singularity exec --nv \
+#     --bind ${WROOT}:${WROOT} \
+#     --bind /home/waue0920/dataset/yolo:/home/waue0920/dataset/yolo \
+#     "${SINGULARITY_IMG}" \
+# torchrun \
+#     --nproc_per_node=${NPROC_PER_NODE} \
+#     --nnodes=${NNODES} \
+#     --node_rank=${NODE_RANK} \
+#     --master_addr=${MASTER_ADDR} \
+#     --master_port=${MASTER_PORT} \
+#     "${WROOT}/yolov9/train_dual.py" \
+#     --weights "${WEIGHTS_IN}" \
+#     --data "${WROOT}/${DATA_YAML}" \
+#     --cfg "${MODEL_CFG}" \
+#     --project "${PROJECT_OUT}" \
+#     --device "${DEVICE_LIST}" \
+#     --name "${NAME_OUT}" \
+#     ${EXTRA_ARGS} # Pass all other hparams
 
 EXIT_CODE=$?
 if [ ${EXIT_CODE} -ne 0 ]; then

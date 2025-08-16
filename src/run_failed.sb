@@ -1,0 +1,240 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --gpus-per-node=1
+#SBATCH --cpus-per-task=4
+#SBATCH --partition=gp1d      ## Partition: gtest | gp2d
+#SBATCH --account="GOV113038"  ## iService_ID Project ID
+#SBATCH --job-name=fl_yolo_slurm
+#SBATCH --output=experiments/slurm.out
+#SBATCH --error=experiments/slurm.out
+
+# ===================================================================================
+# Orchestrator Slurm Script for Federated Learning Experiments (Auto Mode)
+# ===================================================================================
+# Usage: sbatch src/run.sb <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--val]
+# ex :
+# sbatch src/run.sb kitti 4 5
+# sbatch src/run.sb cityscapes 4 5 --val
+# ===================================================================================
+
+export WROOT="/home/waue0920/waue/git/fl_yolo_slurm"
+
+set -e
+set -o pipefail
+
+### 主邏輯說明
+## (登入節點 ln )
+## 1. 執行 sbatch run.sb
+## 2. 跟slurm 要了一個工作節點 w1
+## (工作節點 w1)
+## 3. 在工作節點上，做分資料集的檢查
+## 4. 開始執行每一round 迴圈
+##   4.1 client_train.sh 的邏輯，假設有四個 client ，因此從 w1 平行發出四個 sbatch train job ，
+## 假設每個sbatch job 都個要一個 node ，即 {w2, w3, w4, w5}
+##   4.2 (工作節點 w2) c1 訓練 ;  (工作節點 w3) c2 訓練 ;  (工作節點 w4) c3 訓練 ;  (工作節點 w5) c4 訓練
+##   4.3 (工作節點 w1) 會等到所有job 都算完，才開始做 fl 的 aggregate ，也就是你剛剛改的那段。
+## 5. 這個 round 結束
+## 6. 看是否執行 validation ...
+### 說明結束
+
+# --- 1. Argument Parsing ---
+VALIDATION_ENABLED=false
+args=("$@")
+filtered_args=()
+for arg in "${args[@]}"; do
+    if [[ "$arg" == "--val" ]]; then
+        VALIDATION_ENABLED=true
+    else
+        filtered_args+=("$arg")
+    fi
+done
+set -- "${filtered_args[@]}"
+
+if [ "$#" -ne 3 ]; then
+    echo "Usage: sbatch src/run.sb <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--val]"
+    exit 1
+fi
+DATASET_NAME=$1
+CLIENT_NUM=$2
+TOTAL_ROUNDS=$3
+INITIAL_WEIGHTS="yolov9-c.pt"
+EXTRA_ARGS="--epochs 50 --batch 8"  # 可根據需求調整
+
+SRC_DIR="${WROOT}/src"
+
+cd "${WROOT}"
+
+# --- 2. Generate Experiment ID ---
+EXPERIMENTS_BASE_DIR="experiments"
+SINGULARITY_IMG="${WROOT}/yolo9t2_ngc2306_20241226.sif"
+mkdir -p ${EXPERIMENTS_BASE_DIR}
+RUN_COUNT=$(find "${EXPERIMENTS_BASE_DIR}" -maxdepth 1 -type d | wc -l)
+RUN_NUM=$((RUN_COUNT))
+TIMESTAMP=$(date +%Y%m%d%H%M)
+EXP_ID="${RUN_NUM}_${DATASET_NAME}_${CLIENT_NUM}C_${TOTAL_ROUNDS}R_${TIMESTAMP}"
+EXP_DIR="${EXPERIMENTS_BASE_DIR}/${EXP_ID}"
+
+# --- 3. Create Directories ---
+mkdir -p "${EXP_DIR}/slurm_logs"
+mkdir -p "${EXP_DIR}/client_outputs/${EXP_ID}"
+mkdir -p "${EXP_DIR}/aggregated_weights"
+mkdir -p "${EXP_DIR}/fed_avg_logs"
+
+# --- 4. Setup Logging ---
+exec > >(tee -a "${EXP_DIR}/orchestrator.log")
+exec 2> >(tee -a "${EXP_DIR}/orchestrator.log" >&2)
+
+echo "######################################################################"
+echo "##  STARTING NEW PARALLEL FEDERATED LEARNING EXPERIMENT (SLURM AUTO)"
+echo "##  Experiment ID: ${EXP_ID}"
+echo "######################################################################"
+
+echo -e "\n--- STEP 1: Preparing data for ${CLIENT_NUM} clients... ---"
+##################
+# FL 1 分割資料集
+##################
+# 這邊也要改在 container 內執行，以免遇到 worker node 上的 pyhon 環境函式庫找不到的問題
+singularity exec --nv --bind "${WROOT}":"${WROOT}" \
+    "${SINGULARITY_IMG}" \
+    python3 "${SRC_DIR}/data_prepare.py" --dataset-name "${DATASET_NAME}" \
+    --num-clients "${CLIENT_NUM}"
+echo "--- Data preparation step complete. ---"
+
+# ROUND 的迴圈，要確保邏輯正確
+echo -e "\n--- STEP 2: Starting Federated Learning Rounds... ---"
+for r in $(seq 1 ${TOTAL_ROUNDS}); do
+    echo -e "\n==================[ ROUND ${r} / ${TOTAL_ROUNDS} ]=================="
+    if [ "${r}" -eq 1 ]; then
+        current_weights="${WROOT}/${INITIAL_WEIGHTS}"
+    else
+        prev_round=$((r - 1))
+        current_weights="${WROOT}/${EXP_DIR}/aggregated_weights/w_s_r${prev_round}.pt"
+    fi
+    echo "Using weights for this round: ${current_weights}"
+
+    ##################
+    # FL 2 Client 端分散式訓練
+    ##################
+    client_job_ids=""
+    for c in $(seq 1 ${CLIENT_NUM}); do
+        DATA_YAML="federated_data/${DATASET_NAME}_${CLIENT_NUM}/c${c}.yaml"
+        WEIGHTS_IN="${current_weights}"
+        PROJECT_OUT="${EXP_DIR}/client_outputs/${EXP_ID}"
+        NAME_OUT="r${r}_c${c}"
+
+        # [錯誤範例] 
+        # 曾經嘗試用 sbatch --wrap 來提交 client job，但發現python3在哪裡都不知道
+        # 秀 FATAL: python3: executable file not found in $PATH
+        # [正確用法] 改回使用 sbatch 執行 client_train.sh 提交 client job
+        echo "Using weights for this round: ${current_weights}"
+
+        # Submit all client jobs for the current round in parallel
+        # The fl_client.sh script returns a list of submitted job IDs
+        output=$("${SRC_DIR}/fl_client_train.sh" \
+            "${WROOT}/${EXP_DIR}" \
+            "${WROOT}" \
+            "${r}" \
+            "${CLIENT_NUM}" \
+            "${DATASET_NAME}" \
+            "${current_weights}")
+
+        # Extract job IDs from the output of fl_client.sh
+        # Assuming sbatch output is "Submitted batch job XXXXXX"
+        client_job_ids=$(echo "${output}" | grep "Submitted batch job" | awk '{print $4}' | tr '\n' ' ')
+        
+        # Check if we have job IDs
+        if [ -z "${client_job_ids}" ]; then
+            echo "Error: Failed to submit client jobs or parse job IDs for round ${r}. Exiting." >&2
+            exit 1
+        fi
+
+        dependency_list=$(echo ${client_job_ids} | sed 's/ /:/g')
+        echo -e "\n--> All client jobs submitted. Dependency list: ${dependency_list}"
+        echo ">> Submitting federated averaging job, which will run after clients finish."
+    done
+
+    dependency_list=$(echo ${client_job_ids} | sed 's/ /:/g')
+    echo -e "\n--> All client jobs submitted. Dependency list: ${dependency_list}"
+    echo ">> Submitting federated averaging job, which will run after clients finish."
+
+    ##################
+    # FL 3 Server 端聚合
+    ##################
+    # [錯誤範例] 這樣寫會導致 server aggregation 沒有在 Singularity container 內執行，
+    # 會遇到 Python module (如 torch) 找不到的問題：
+    # srun --dependency=afterok:${dependency_list} \
+    #     python3 "${SRC_DIR}/server_fedavg.py" \
+    #     --input-dir "${EXP_DIR}/client_outputs/${EXP_ID}" \
+    #     --output-file "${EXP_DIR}/aggregated_weights/w_s_r${r}.pt" \
+    #     --expected-clients "${CLIENT_NUM}" \
+    #     --round "${r}" \
+    #     > "${EXP_DIR}/fed_avg_logs/round_${r}.out" 2> "${EXP_DIR}/fed_avg_logs/round_${r}.err"
+    # [錯誤用法] 以下 singularity exec 包起來，確保在 container 內執行，卻不能保證他會等 client job，終究是失敗的做法..
+    # srun --dependency=afterok:${dependency_list} \
+    #     singularity exec --nv --bind "${WROOT}":"${WROOT}" \
+    #     "${SINGULARITY_IMG}" \
+    #     python3 "${WROOT}/src/server_fedavg.py" \
+    #     --input-dir "${WROOT}/${EXP_DIR}/client_outputs/${EXP_ID}" \
+    #     --output-file "${WROOT}/${EXP_DIR}/aggregated_weights/w_s_r${r}.pt" \
+    #     --expected-clients "${CLIENT_NUM}" \
+    #     --round "${r}" \
+    #     > "${EXP_DIR}/fed_avg_logs/round_${r}.out" 2> "${EXP_DIR}/fed_avg_logs/round_${r}.err"
+    # echo "--> Federated averaging for Round ${r} complete."
+    # [正確用法] 應該用 sbatch 提交一個新的相依任務，並使用 --wait 等待其完成。
+    # 這樣 run.sb 這個 orchestrator job 就會暫停，直到 aggregation job 結束。
+    "${SRC_DIR}/fl_server_fedavg.sh" \
+        "${WROOT}/${EXP_DIR}" \
+        "${WROOT}" \
+        "${r}" \
+        "${CLIENT_NUM}" \
+        --dependency "${dependency_list}" \
+        --wait
+
+    echo "--> Federated averaging for Round ${r} complete."
+
+done
+
+
+##################
+# FL 4 Server 端驗證
+##################
+
+if [ "$VALIDATION_ENABLED" = true ]; then
+    echo -e "\n--- STEP 3: Running Model Validation ---"
+    echo ">> Validating all models (baseline + ${TOTAL_ROUNDS} rounds)..."
+    # [錯誤範例] 這樣寫會導致 validation 沒有在 Singularity container 內執行，
+    # 會遇到 Python module (如 torch) 找不到的問題：
+    # if python3 "${SRC_DIR}/validate_federated_model.py" \
+    #     --experiment-dir "${WROOT}/${EXP_DIR}" \
+    #     --data-config "data/${DATASET_NAME}.yaml" \
+    #     ; then
+    #     echo "--- Model validation complete. ---"
+    #     VALIDATION_MSG="##  Validation results: ${EXP_DIR}/validation/"
+    # else
+    #     echo "Warning: Model validation failed, but experiment completed successfully."
+    #     VALIDATION_MSG="##  Validation: Failed (see logs above)"
+    # fi
+
+    # [正確範例] 應該用 singularity exec 包起來，確保在 container 內執行：
+    if singularity exec --nv --bind "${WROOT}":"${WROOT}" \
+        "${SINGULARITY_IMG}" \
+        python3 "${WROOT}/src/validate_federated_model.py" \
+        --experiment-dir "${WROOT}/${EXP_DIR}" \
+        --data-config "${WROOT}/data/${DATASET_NAME}.yaml" \
+        ; then
+        echo "--- Model validation complete. ---"
+        VALIDATION_MSG="##  Validation results: ${EXP_DIR}/validation/"
+    else
+        echo "Warning: Model validation failed, but experiment completed successfully."
+        VALIDATION_MSG="##  Validation: Failed (see logs above)"
+    fi
+else
+    VALIDATION_MSG="##  Validation: Skipped (use --val to enable)"
+fi
+
+echo -e "\n######################################################################"
+echo "##  AUTOMATED FEDERATED LEARNING EXPERIMENT COMPLETED"
+echo "##  Final model: ${EXP_DIR}/aggregated_weights/w_s_r${TOTAL_ROUNDS}.pt"
+echo "${VALIDATION_MSG}"
+echo "######################################################################"

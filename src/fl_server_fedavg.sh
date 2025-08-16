@@ -75,22 +75,25 @@ if [ -n "${DEPENDENCY}" ]; then
 fi
 echo "======================================================================"
 
-# --- 4. Build sbatch command with optional arguments ---
-SBATCH_CMD="sbatch --job-name=fed_avg_r${ROUND} --output=${LOG_OUT} --error=${LOG_ERR} --chdir=${WROOT}"
+# --- 4. Build sbatch command with optional arguments (Bash array style) ---
+SBATCH_CMD=(sbatch --export=ALL --job-name="fed_avg_r${ROUND}" --output="${LOG_OUT}" \
+    --error="${LOG_ERR}" --chdir="${WROOT}")
 
 if [ -n "${DEPENDENCY}" ]; then
-    SBATCH_CMD="${SBATCH_CMD} --dependency=afterok:${DEPENDENCY}"
+    SBATCH_CMD+=(--dependency=afterok:${DEPENDENCY})
 fi
-
 if [ -n "${WAIT_FLAG}" ]; then
-    SBATCH_CMD="${SBATCH_CMD} ${WAIT_FLAG}"
+    SBATCH_CMD+=(${WAIT_FLAG})
 fi
 
-
-SBATCH_CMD="${SBATCH_CMD} ${WROOT}/src/server_fedavg.sb --input-dir ${INPUT_DIR} --output-file ${OUTPUT_FILE} --expected-clients ${CLIENT_NUM} --round ${ROUND}"
+SBATCH_CMD+=("${WROOT}/src/server_fedavg.sb" \
+    --input-dir "${INPUT_DIR}" \
+    --output-file "${OUTPUT_FILE}" \
+    --expected-clients "${CLIENT_NUM}" \
+    --round "${ROUND}")
 
 # --- 5. Execute the sbatch command ---
-eval "${SBATCH_CMD}"
+"${SBATCH_CMD[@]}"
 
 echo "----------------------------------------------------------------------"
 echo "## Federated averaging job for Round ${ROUND} has been submitted."
