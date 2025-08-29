@@ -13,7 +13,7 @@
 # 2. MANUAL SOP MODE:
 #    Generates a step-by-step Standard Operating Procedure (SOP) with
 #    copy-paste ready commands for manual execution, utilizing the new
-#    helper scripts (fl_client.sh, fed_avg.sb).
+#    helper scripts (fl_client.sh, fed_agg.sb).
 #    Usage: ./src/orchestrator.sh <dataset> <clients> <rounds> --manual [--val]
 #
 # Optional flags:
@@ -75,6 +75,7 @@ if [ -z "$EXP_ID" ]; then
     TIMESTAMP=$(date +%Y%m%d%H%M)
     EXP_ID="${RUN_NUM}_${DATASET_NAME}_${CLIENT_NUM}C_${TOTAL_ROUNDS}R_${TIMESTAMP}"
 fi
+
 EXP_DIR="${EXPERIMENTS_BASE_DIR}/${EXP_ID}"
 
 # --- 4.1. Export Experiment Variables ---
@@ -134,7 +135,7 @@ python3 src/data_prepare.py \
 mkdir -p "${WROOT}/${EXP_DIR}/slurm_logs"
 mkdir -p "${WROOT}/${EXP_DIR}/client_outputs/${EXP_ID}"
 mkdir -p "${WROOT}/${EXP_DIR}/aggregated_weights"
-mkdir -p "${WROOT}/${EXP_DIR}/fed_avg_logs"
+mkdir -p "${WROOT}/${EXP_DIR}/fed_agg_logs"
 
 INTRO
 
@@ -169,11 +170,11 @@ INTRO
 
 ROUND_HEADER
 
-        # Generate fed_avg command for the round
-        fed_avg_input_dir="${WROOT}/${EXP_DIR}/client_outputs/round_${r}"
-        fed_avg_output_file="${WROOT}/${EXP_DIR}/aggregated_weights/w_s_r${r}.pt"
-        fed_avg_log_out="${WROOT}/${EXP_DIR}/fed_avg_logs/round_${r}.out"
-        fed_avg_log_err="${WROOT}/${EXP_DIR}/fed_avg_logs/round_${r}.err"
+        # Generate fed_agg command for the round
+        fed_agg_input_dir="${WROOT}/${EXP_DIR}/client_outputs/round_${r}"
+        fed_agg_output_file="${WROOT}/${EXP_DIR}/aggregated_weights/w_s_r${r}.pt"
+        fed_agg_log_out="${WROOT}/${EXP_DIR}/fed_agg_logs/round_${r}.out"
+        fed_agg_log_err="$fed_agg_log_out"
 
         cat << AVG_HEADER
 
@@ -183,11 +184,12 @@ ROUND_HEADER
 # Wait for all client jobs to complete, then submit averaging job
 
 ### COMMANDS ###
-./src/fl_server_fedavg.sh \
+./src/fl_server_fedagg.sh \
     "${WROOT}/${EXP_DIR}" \
     "${WROOT}" \
     "${r}" \
-    "${CLIENT_NUM}"
+    "${CLIENT_NUM}" \
+    --algorithm ${SERVER_ALG}
 
 AVG_HEADER
     done
@@ -229,7 +231,8 @@ fi
 mkdir -p "${EXP_DIR}/slurm_logs"
 mkdir -p "${EXP_DIR}/client_outputs/${EXP_ID}"  # New structure: all rounds under EXP_ID
 mkdir -p "${EXP_DIR}/aggregated_weights"
-mkdir -p "${EXP_DIR}/fed_avg_logs"
+mkdir -p "${EXP_DIR}/fed_agg_logs"
+cp "${WROOT}/src/env.sh" "${EXP_DIR}/env.sh"
 
 # --- 6. Setup Logging ---
 # Redirect all output to both console and log file
@@ -282,14 +285,15 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
 
     dependency_list=$(echo ${client_job_ids} | sed 's/ /:/g')
     echo -e "\n--> All client jobs submitted. Dependency list: ${dependency_list}"
-    echo ">> Submitting federated averaging job, which will run after clients finish."
+    echo ">> Submitting federated aggregation job, which will run after clients finish."
 
-    # Submit the fed_avg job using the helper script, with dependency and wait flags
-    "${SRC_DIR}/fl_server_fedavg.sh" \
+    # Submit the fed_agg job using the helper script, with dependency and wait flags
+    "${SRC_DIR}/fl_server_fedagg.sh" \
         "${WROOT}/${EXP_DIR}" \
         "${WROOT}" \
         "${r}" \
         "${CLIENT_NUM}" \
+        --algorithm ${SERVER_ALG} \
         --dependency "${dependency_list}" \
         --wait
 

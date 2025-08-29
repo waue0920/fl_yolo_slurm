@@ -1,0 +1,50 @@
+#!/bin/bash
+#SBATCH --partition=gtest      ## Partition: gtest | gp2d
+#SBATCH --account=GOV113038
+#SBATCH --gpus-per-node=1
+#SBATCH --cpus-per-task=4
+#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=1
+
+set -e
+echo "========================================================"
+echo "## Starting Federated Aggregation Job"
+echo "## Job ID: ${SLURM_JOB_ID}"
+echo "## Executing on: $(hostname)"
+echo "## Current Directory: $(pwd)"
+echo "## Received Arguments: $@"
+echo "========================================================"
+
+# --- 1. Setup Singularity Environment ---
+# Use WROOT environment variable (set by user before execution)
+if [ -z "${WROOT}" ]; then
+    echo "Error: WROOT environment variable is not set"
+    echo "Please run: export WROOT=/path/to/project/root"
+    exit 1
+fi
+
+SINGULARITY_IMG="${WROOT}/yolo9t2_ngc2306_20241226.sif"
+
+echo "Project root: ${WROOT}"
+echo "Singularity image: ${SINGULARITY_IMG}"
+
+# Check if Singularity image exists
+if [ ! -f "${SINGULARITY_IMG}" ]; then
+    echo "Error: Singularity image not found at ${SINGULARITY_IMG}"
+    exit 1
+fi
+
+# --- 2. Execute Federated Aggregation inside Singularity ---
+echo ">> Executing federated aggregation inside Singularity container..."
+
+CMD="singularity exec \
+    --bind ${WROOT}:${WROOT} \
+    \"${SINGULARITY_IMG}\" \
+    python3 \"${WROOT}/src/server_fedagg.py\" $@"
+    
+echo "[CMD] $CMD"
+eval "$CMD"
+
+echo "========================================================"
+echo "## Federated Aggregation Job Completed"
+echo "========================================================"
