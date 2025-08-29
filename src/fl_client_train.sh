@@ -72,7 +72,6 @@ for c in $(seq 1 ${CLIENT_NUM}); do
         --output=${SLURM_LOG_OUT} \
         --error=${SLURM_LOG_ERR} \
         --chdir=${WROOT} \
-        --nodes=${CLIENT_NODES} \
         --gpus-per-node=${CLIENT_GPUS} \
         --cpus-per-task=${CLIENT_CPUS} \
         --partition=${SLURM_PARTITION} \
@@ -91,7 +90,7 @@ for c in $(seq 1 ${CLIENT_NUM}); do
         --output="${SLURM_LOG_OUT}" \
         --error="${SLURM_LOG_ERR}" \
         --chdir="${WROOT}" \
-        --nodes="${CLIENT_NODES}" \
+        --nodes="1" \
         --gpus-per-node="${CLIENT_GPUS}" \
         --cpus-per-task="${CLIENT_CPUS}" \
         --partition="${SLURM_PARTITION}" \
