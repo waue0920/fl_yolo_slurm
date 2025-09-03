@@ -9,8 +9,8 @@
 set -e
 set -o pipefail
 
-# 先 source 專案根目錄的 env.sh
-source "${WROOT}/src/env.sh"
+# # 先 source 專案根目錄的 env.sh
+# source "${WROOT}/src/env.sh"
 
 # --- 1. Argument Parsing ---
 if [ "$#" -ne 6 ]; then

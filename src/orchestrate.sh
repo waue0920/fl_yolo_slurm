@@ -228,6 +228,10 @@ fi
 # ===================================================================================
 
 # --- 5. Create Directories ---
+echo "######################################################################"
+echo "##  Initializing Experiment Directories"
+echo "##  Experiment ID: ${EXP_ID}"
+echo "######################################################################"
 mkdir -p "${EXP_DIR}/slurm_logs"
 mkdir -p "${EXP_DIR}/client_outputs/${EXP_ID}"  # New structure: all rounds under EXP_ID
 mkdir -p "${EXP_DIR}/aggregated_weights"
@@ -239,13 +243,10 @@ cp "${WROOT}/src/env.sh" "${EXP_DIR}/env.sh"
 exec > >(tee -a "${EXP_DIR}/orchestrator.log")
 exec 2> >(tee -a "${EXP_DIR}/orchestrator.log" >&2)
 
-echo "######################################################################"
-echo "##"
+
 echo "##  STARTING NEW PARALLEL FEDERATED LEARNING EXPERIMENT (AUTOMATED V3)"
-echo "##"
-echo "##  Experiment ID: ${EXP_ID}"
-echo "##"
-echo "######################################################################"
+echo "##  Experiment Directory: ${EXP_DIR}"
+echo "##  Environment: ${EXP_DIR}/env.sh"
 
 echo -e "\n--- STEP 1: Preparing data for ${CLIENT_NUM} clients... ---"
 python3 "${SRC_DIR}/data_prepare.py" --dataset-name "${DATASET_NAME}" --num-clients "${CLIENT_NUM}"
