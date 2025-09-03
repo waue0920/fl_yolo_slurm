@@ -1,13 +1,10 @@
 # Ignore datasets, experiments, and yolov9 folders and files
 /aggregated_weights/
 /backup/
-/client_outputs/
 /experiments/
-/slurm_logs/
-/wait/
 /wandb/
-yolov9-c.pt
-yolo9t2_ngc2306_20241226.sif
+yolov9-*.pt
+yolo9t2*.sif
 
 # Ignore the contents of data directories, but keep the placeholder READMEs
 /datasets/*
@@ -17,7 +14,7 @@ yolo9t2_ngc2306_20241226.sif
 
 # Ignore jupyter notebook checkpoint directories
 .ipynb_checkpoints/
-
+.vscode
 
 # 忽略 python 的快取檔案與快取資料夾
 __pycache__/
