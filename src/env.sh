@@ -6,7 +6,7 @@ export WROOT="/home/waue0920/fl_yolo_slurm"
 export EXPERIMENTS_BASE_DIR="${WROOT}/experiments"
 
 ## Dataset
-export DATASET_NAME="kitti"
+export DATASET_NAME="sim10k"
 ## Environment
 export SINGULARITY_IMG="${WROOT}/yolo9t2_ngc2306_20241226.sif"
 
@@ -23,7 +23,7 @@ export SLURM_ACCOUNT="GOV113038"
 ## FL
 export CLIENT_NUM=4   # Client 端數量
 export TOTAL_ROUNDS=3  # FL Rounds
-export EPOCHS=10
+export EPOCHS=30
 ## Yolo
 export BATCH_SIZE=16
 export IMG_SIZE=640
@@ -36,5 +36,5 @@ export CLIENT_CPUS=8
 #####################
 ## FL Server 端的參數
 #####################
-export SERVER_ALG="fedavg"   # 支持 fedavg, fedprox, scaffold
+export SERVER_ALG="fedprox"   # 支持 fedavg, fedprox, scaffold
 export SERVER_FEDPROX_MU=0.01  # FedProx 的 proximal term 係數
