@@ -3,6 +3,7 @@
 /backup/
 /experiments/
 /wandb/
+/yolov9/
 yolov9-*.pt
 yolo9t2*.sif
 
