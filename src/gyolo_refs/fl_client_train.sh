@@ -36,15 +36,14 @@ WANDB_PROJECT="${EXP_ID}"
 # These are parameters shared across all clients for this round.
 OUTPUT_PROJECT_PATH="${EXP_DIR}/client_outputs/${EXP_ID}"
 
-# Use TRAIN_EXTRA_ARGS from env.sh if available, otherwise use default
 if [ -z "$TRAIN_EXTRA_ARGS" ]; then
-    TRAIN_EXTRA_ARGS="--epochs 50 --batch-size 8 --img 640 --workers 4 --hyp ${WROOT}/yolov9/data/hyps/hyp.scratch-high.yaml --optimizer AdamW --flat-cos-lr --close-mosaic 2 --save-period 1 --noplots"
+    TRAIN_EXTRA_ARGS="--epochs 50 --batch 8 --img 640 --workers 4 --hyp hyp.yaml --optimizer AdamW --flat-cos-lr --no-overlap --close-mosaic 2 --save-period 1 --noplots"
 fi
 
 # echo "======================================================================"
 # echo "## Submitting all client training jobs for Round ${ROUND}"
 # echo "## Experiment ID: ${EXP_ID}"
-# echo "## Wandb Project: ${WANDB_PROJECT}"
+# echo "## Wandb Project: ${OUTPUT_PROJECT_PATH}"
 # echo "## Experiment Directory: ${EXP_DIR}"
 # echo "## Number of Clients: ${CLIENT_NUM}"
 # echo "## Input Weights: ${CURRENT_WEIGHTS}"
@@ -55,13 +54,15 @@ for c in $(seq 1 ${CLIENT_NUM}); do
     # Per-client configuration
     CLIENT_DATA_YAML="federated_data/${DATASET_NAME}_${CLIENT_NUM}/c${c}.yaml"
     OUTPUT_NAME="r${ROUND}_c${c}"  # Simplified naming: r1_c1, r2_c3, etc.
+    # WANDB_RUN_NAME 實際會被傳給 gyolo/caption/train.py 的 --name 參數
+    # 這個參數同時決定 wandb run name 及子目錄
     WANDB_RUN_NAME="r${ROUND}_c${c}"  # Clean wandb run name
     SLURM_LOG_OUT="${EXP_DIR}/slurm_logs/client_${c}_round_${ROUND}.out"
     SLURM_LOG_ERR="${EXP_DIR}/slurm_logs/client_${c}_round_${ROUND}.out"
 
     # echo "--> Submitting training job for Client ${c}..."
     # echo "    File output: ${OUTPUT_PROJECT_PATH}/${OUTPUT_NAME}"
-    # echo "    Wandb project: ${WANDB_PROJECT} (derived from file path)"
+    # echo "    Wandb project: ${OUTPUT_PROJECT_PATH} (derived from file path)"
     # echo "    Wandb run: ${WANDB_RUN_NAME}"
 
     # The sbatch command submits the client_train.sb script with all necessary
@@ -84,7 +85,7 @@ for c in $(seq 1 ${CLIENT_NUM}); do
         "${WROOT}/src/client_train.sb"
         "./src/client_train.sh"
         --data-yaml "${CLIENT_DATA_YAML}"
-        --weights-in "${CURRENT_WEIGHTS}"
+        --weights-in "${CURRENT_WEIGHTS}"        
         --project-out "${OUTPUT_PROJECT_PATH}"
         --name-out "${WANDB_RUN_NAME}"
         --extra-args "${TRAIN_EXTRA_ARGS}"

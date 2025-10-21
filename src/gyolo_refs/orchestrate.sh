@@ -5,7 +5,7 @@
 # ===================================================================================
 # This script executes the entire FL pipeline automatically. It submits client jobs
 # in parallel and uses Slurm dependencies to trigger the averaging step.
-# Usage: ./src/orchestrate.sh <dataset> <clients> <rounds> [--val]
+# Usage: ./src/orchestrator.sh <dataset> <clients> <rounds> [--val]
 #
 # Optional flags:
 #    --val:    Include model validation step
@@ -39,16 +39,13 @@ source "${WROOT}/src/env.sh"
 # --- 3. Configuration ---
 if [ "$#" -ne 3 ]; then
     echo "Usage: $0 <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--val]"
-    echo "ex : $0 kitti 4 2"
-    echo "ex : $0 kitti 4 2 --val"
+    echo "ex : $0 coco 4 2"
+    echo "ex : $0 coco 4 2 --val"
     exit 1
 fi
 DATASET_NAME=$1
 CLIENT_NUM=$2
 TOTAL_ROUNDS=$3
-INITIAL_WEIGHTS="yolov9-c.pt"
-
-
 
 # --- 4. Handle EXP_ID (from argument or auto-generate) ---
 EXP_ID=$4
@@ -64,7 +61,7 @@ fi
 EXP_DIR="${EXPERIMENTS_BASE_DIR}/${EXP_ID}"
 
 # --- 4.1. Export Experiment Variables ---
-# Export experiment identifiers for both modes
+# Export experiment identifiers
 
 export WROOT="${WROOT}"
 export SRC_DIR="${WROOT}/src"
@@ -96,7 +93,8 @@ cp "${WROOT}/src/env.sh" "${EXP_DIR}/env.sh"
 exec > >(tee -a "${EXP_DIR}/orchestrator.log")
 exec 2> >(tee -a "${EXP_DIR}/orchestrator.log" >&2)
 
-echo "##  STARTING PARALLEL FEDERATED LEARNING EXPERIMENT (AUTOMATED V3)"
+
+echo "##  STARTING NEW PARALLEL FEDERATED LEARNING EXPERIMENT (AUTOMATED V3)"
 echo "##  Experiment Directory: ${EXP_DIR}"
 echo "##  Environment: ${EXP_DIR}/env.sh"
 
@@ -109,15 +107,23 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
     echo -e "\n==================[ ROUND ${r} / ${TOTAL_ROUNDS} ]=================="
 
     if [ "${r}" -eq 1 ]; then
-        current_weights="${WROOT}/${INITIAL_WEIGHTS}"
+        # If INITIAL_WEIGHTS is set, verify it exists. If empty, it's a valid scratch training.
+        if [ -n "${INITIAL_WEIGHTS}" ] && [ ! -f "${INITIAL_WEIGHTS}" ]; then
+            echo "Error: INITIAL_WEIGHTS is set to '${INITIAL_WEIGHTS}' in env.sh, but the file was not found at '${INITIAL_WEIGHTS}'." >&2
+            exit 1
+        fi
+        current_weights="${INITIAL_WEIGHTS}"
     else
         prev_round=$((r - 1))
         current_weights="${WROOT}/${EXP_DIR}/aggregated_weights/w_s_r${prev_round}.pt"
     fi
+
     echo "Using weights for this round: ${current_weights}"
 
     # Submit all client jobs for the current round in parallel
     # The fl_client.sh script returns a list of submitted job IDs
+    echo "[EXECUTING] Client training for round ${r}:"
+    set -x
     output=$("${SRC_DIR}/fl_client_train.sh" \
         "${WROOT}/${EXP_DIR}" \
         "${WROOT}" \
@@ -125,6 +131,7 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
         "${CLIENT_NUM}" \
         "${DATASET_NAME}" \
         "${current_weights}")
+    set +x
 
     # Extract job IDs from the output of fl_client.sh
     # Assuming sbatch output is "Submitted batch job XXXXXX"
@@ -141,6 +148,8 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
     echo ">> Submitting federated aggregation job, which will run after clients finish."
 
     # Submit the fed_agg job using the helper script, with dependency and wait flags
+    echo "[EXECUTING] Federated aggregation for round ${r}:"
+    set -x
     "${SRC_DIR}/fl_server_fedagg.sh" \
         "${WROOT}/${EXP_DIR}" \
         "${WROOT}" \
@@ -149,6 +158,7 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
         --algorithm ${SERVER_ALG} \
         --dependency "${dependency_list}" \
         --wait
+    set +x
 
     if [ $? -ne 0 ]; then
         echo "Error: Federated averaging failed for round ${r}. Stopping experiment."
@@ -160,14 +170,17 @@ done
 
 # Run validation only if --val flag is provided
 if [ "$VALIDATION_ENABLED" = true ]; then
-    echo -e "\n--- STEP 3: Running Model Validation ---"
+    echo -e "\n--- STEP 2: Running Model Validation ---"
     echo ">> Validating all models (baseline + ${TOTAL_ROUNDS} rounds)..."
 
     # Run validation with error handling
+    echo "[EXECUTING] Model validation:"
+    set -x
     if python3 "${SRC_DIR}/validate_federated_model.py" \
         --experiment-dir "${WROOT}/${EXP_DIR}" \
         --data-config "data/${DATASET_NAME}.yaml" \
         ; then
+    set +x
         echo "--- Model validation complete. ---"
         VALIDATION_MSG="##  Validation results: ${EXP_DIR}/validation/"
     else
@@ -182,6 +195,5 @@ echo -e "\n#####################################################################
 echo "##"
 echo "##  AUTOMATED FEDERATED LEARNING EXPERIMENT COMPLETED"
 echo "##  Final model: ${EXP_DIR}/aggregated_weights/w_s_r${TOTAL_ROUNDS}.pt"
-echo "${VALIDATION_MSG}"
 echo "##"
 echo "######################################################################"

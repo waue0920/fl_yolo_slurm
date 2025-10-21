@@ -12,11 +12,14 @@
 
 ### 二、執行
 - [快速開始 (自動模式)](#-快速開始-自動模式)
-- [手動執行標準作業程序 (SOP)](#-手動執行標準作業程序-sop)
+- [實驗續跑 (Replay)](#-實驗續跑-replay)
+- [Standalone 模式 (無 Slurm)](#-standalone-模式-無-slurm)
+- [單元測試](#-單元測試)
 
 ### 三、驗證與補充
 - [模型驗證說明](#-模型驗證說明)
 - [監控與偵錯指南](#-監控與偵錯指南)
+- [支援的聚合演算法](#-支援的聚合演算法)
 
 ---
 
@@ -97,37 +100,81 @@ git submodule update --init --recursive
 
 ## 🚀 快速開始
 
-### 全自動模式 (所有工作都在工作節點執行)
+### 全自動模式 (Slurm 叢集)
 ```bash
-# 使用 kitti 資料集，4 個客戶端，進行 2 輪聯邦學習
+# 方式 1: 使用 sbatch (所有工作都在工作節點執行)
 sbatch src/run.sb 
-```
 
-### 全自動模式 (少數工作在登入節點執行)
-```bash
-# 使用 kitti 資料集，4 個客戶端，進行 2 輪聯邦學習
+# 方式 2: 使用 orchestrate.sh (少數工作在登入節點執行)
 ./src/orchestrate.sh kitti 4 2
 ```
 > **提示**: 若要包含最終的模型驗證，請加上 `--val` 旗標。
-* 執行畫面，會自動偵測是否要分割資料集，然後發起n+1個slurm程序
-    * n client train (parallel)
-    * 1 server aggregate  (waiting for client complete)
+
+執行畫面會自動偵測是否要分割資料集，然後發起 n+1 個 Slurm 程序：
+- n 個 client train (parallel)
+- 1 個 server aggregate (waiting for client complete)
 
 ![slurm](pics/sim10k_c4_r5_slurm.png)
+
+---
+
+## � 實驗續跑 (Replay)
+
+如果聯邦學習實驗中途失敗，可以使用 `replay.sh` 從中斷點繼續執行：
+
+```bash
+# 指定實驗目錄，自動檢測已完成的輪次並繼續
+./src/replay.sh experiments/18_kitti_4C_6R_202510010849
+```
+
+**功能特點**：
+- ✅ 自動檢測已完成的輪數
+- ✅ 從失敗點繼續執行
+- ✅ 完整的日誌記錄
+- ✅ 避免重複執行已完成的輪次
+
+---
+
+## 💻 Standalone 模式 (無 Slurm)
+
+適合在本地環境或沒有 Slurm 的伺服器上進行測試：
+
+```bash
+# 所有參數從 env.sh 讀取
+./src/standalone_orchestrate.sh
+
+# Dry-run 模式：只顯示命令，不實際執行
+./src/standalone_orchestrate.sh --dry-run
+```
+
+**特點**：
+- ✅ 不需要 Slurm 環境
+- ✅ 順序執行所有客戶端訓練
+- ✅ 適合小規模測試和除錯
+- ✅ 支援 dry-run 預覽模式
+
+---
+
+## 🧪 單元測試
+
+快速測試聚合演算法和訓練流程：
+
+```bash
+# 編輯 src/run_unit_test.sh 設定 EXP_ID 和演算法
+# 然後執行
+./src/run_unit_test.sh
+```
+
+**測試流程**：
+1. 使用既有實驗的 Round 1 客戶端輸出進行聚合測試
+2. 使用聚合後的權重進行 Round 2 客戶端訓練測試
+3. 驗證 loss 值是否正常、NaN/Inf 處理是否正確
+
 ---
 
 ### 📖 手動模式的進階說明 (SOP)
-* 手動模式
-    - 以下指令會產生出 sop.sh ，可以照著這份腳本一行一行操作
-```bash
-# 使用 kitti 資料集，4 個客戶端，進行 2 輪聯邦學習
-./src/orchestrate.sh kitti 4 2 --manual --val > sop.sh
-```
-
-* 此方法目的在於方便偵錯與詳細觀察。詳細步驟請參考：
-- **[📖 手動執行標準作業程序 (SOP) 指南](./readme_sop.md)**
-
-![sop](pics/kitti_c4_r5_sop.png)
+**注意**: Manual SOP 模式已在 v3 中移除，改為專注於自動化流程。
+如需詳細控制，請使用 `standalone_orchestrate.sh` 或直接參考腳本內容。
 
 ---
 
@@ -145,10 +192,64 @@ sbatch src/run.sb
 提供 Slurm 監控、日誌檢查和常見問題的解決方案。詳細內容請參考：
 - **[🔍 監控與偵錯指南](./readme_debug.md)**
 
+---
+
+## 🧮 支援的聚合演算法
+
+本框架支援多種先進的聯邦學習聚合演算法，可在 `src/env.sh` 中設定 `SERVER_ALG` 變數：
+
+| 演算法 | 說明 | 適用場景 | 超參數 |
+|--------|------|---------|--------|
+| **fedavg** | 標準聯邦平均 | 通用，IID 數據 | - |
+| **fedprox** | FedProx (近端項正則化) | Non-IID 數據 | `SERVER_FEDPROX_MU` |
+| **fedavgm** | FedAvgM (Server 端動量) | 加速收斂 | `SERVER_FEDAVGM_LR`, `SERVER_FEDAVGM_MOMENTUM` |
+| **fedopt** | FedOpt (Server 端 Adam) | 穩定訓練 | `SERVER_FEDOPT_LR`, `SERVER_FEDOPT_BETA1`, `SERVER_FEDOPT_BETA2` |
+| **fedyoga** | **FedYOGA (自適應權重)** | **Non-IID 數據，不均衡** | `SERVER_FEDYOGA_PCA_DIM`, `SERVER_FEDYOGA_CLIP_THRESHOLD` 等 |
+| **fednova** | FedNova (標準化聚合) | 異質訓練步數 | `SERVER_FEDNOVA_MU`, `SERVER_FEDNOVA_LR` |
+
+### FedYOGA 特色功能
+
+**FedYOGA** 是本框架的進階聚合演算法，特別針對 Non-IID 和數據不均衡場景優化：
+
+- ✅ **PCA 降維**: 減少權重差異的維度，提升聚合效率
+- ✅ **自適應權重**: 根據客戶端的 loss drop 和 gradient variance 動態調整權重
+- ✅ **數值穩定性**: 
+  - 自動檢測並修復 BatchNorm 統計量中的 NaN/Inf
+  - 跳過損壞的客戶端權重，繼續聚合
+  - 權重差異裁剪，防止極端值
+- ✅ **複雜度分析**: 自動計算並顯示空間與通訊複雜度
+
+**配置範例** (`src/env.sh`):
+```bash
+export SERVER_ALG="fedyoga"
+export SERVER_FEDYOGA_HISTORY_WINDOW=5
+export SERVER_FEDYOGA_PCA_DIM=4
+export SERVER_FEDYOGA_CLIP_THRESHOLD=10.0
+```
 
 ---
-**最後更新**：2025-08-12  
-**版本**：v2.1 (導覽版)  
+
+## 🛡️ 錯誤處理與穩定性
+
+### NaN/Inf 自動修復
+本框架具備智能錯誤處理機制：
+
+1. **BatchNorm 統計量修復**: 自動重置損壞的 `running_mean`, `running_var`
+2. **Critical 參數檢測**: 跳過具有 NaN/Inf 權重的客戶端
+3. **詳細診斷訊息**: 提供可能原因和建議解決方案
+
+### 動態端口分配
+避免多客戶端並行訓練時的 NCCL port 衝突：
+- 自動尋找可用端口 (10000-60000)
+- 每個客戶端使用獨立端口
+
+### 實驗日誌
+所有輸出自動記錄到 `experiments/{EXP_ID}/orchestrator.log`，方便事後分析。
+
+---
+
+**最後更新**：2025-10-20  
+**版本**：v3.0 (穩定性增強版)  
 **維護者**：nchc/waue0920
 
 ---

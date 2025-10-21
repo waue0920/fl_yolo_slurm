@@ -4,7 +4,7 @@ from .fedprox import aggregate as fedprox_aggregate
 from .scaffold import aggregate as scaffold_aggregate
 from .fedavgm import aggregate as fedavgm_aggregate
 from .fednova import aggregate as fednova_aggregate
-from .fedyoga import aggregate as fedyoga_aggregate
+from .fedawa import aggregate as fedawa_aggregate
 from .fedopt import aggregate as fedopt_aggregate
 
 AGGREGATORS = {
@@ -13,6 +13,6 @@ AGGREGATORS = {
     "scaffold": scaffold_aggregate,
     "fedavgm": fedavgm_aggregate,
     "fednova": fednova_aggregate,
-    "fedyoga": fedyoga_aggregate,
+    "fedawa": fedawa_aggregate,
     "fedopt": fedopt_aggregate,
 }

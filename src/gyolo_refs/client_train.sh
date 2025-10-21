@@ -17,9 +17,15 @@ set -e # Exit immediately if a command exits with a non-zero status.
 # Initialize variables
 DATA_YAML=""
 WEIGHTS_IN=""
+
+## 參數 PROJECT_OUT 實際會被傳給 gyolo/caption/train.py 的 --project
+## 這個參數同時決定 wandb project name 及訓練結果主目錄
 PROJECT_OUT=""
+## 參數 NAME_OUT 實際會被傳給 gyolo/caption/train.py 的 --name
+## 這個參數同時決定 wandb run name 及子目錄
 NAME_OUT=""
 EXTRA_ARGS=""
+
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -34,7 +40,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Verify required arguments
-if [ -z "${DATA_YAML}" ] || [ -z "${WEIGHTS_IN}" ] || [ -z "${PROJECT_OUT}" ] || [ -z "${NAME_OUT}" ]; then
+if [ -z "${DATA_YAML}" ] || [ -z "${PROJECT_OUT}" ] || [ -z "${NAME_OUT}" ]; then
     echo "Usage: $0 \
     --data-yaml <path_to_client.yaml> \
     --weights-in <path_to_input_weights.pt> \
@@ -54,12 +60,13 @@ if [ -z "${WROOT}" ]; then
 fi
 
 if [ -z "${SINGULARITY_IMG}" ]; then
-    SINGULARITY_IMG="${WROOT}/yolo9t2_ngc2306_20241226.sif"
+    SINGULARITY_IMG="${WROOT}/gyolo_ngc2306.sif"
 fi
 
-MODEL_CFG="${WROOT}/yolov9/models/detect/yolov9-c.yaml"
+MODEL_CFG="${WROOT}/gyolo/models/caption/gyolo.yaml"
 
-# --- 動態端口分配 (避免 NCCL port 衝突) ---
+## 下面這段多節點設定會導致port 衝突而failed
+# MASTER_PORT=9527
 get_free_port() {
     while :; do
         PORT=$(( ( RANDOM % 50000 )  + 10000 ))
@@ -76,6 +83,7 @@ NNODES=1
 NODE_RANK=0
 MASTER_ADDR=localhost
 
+
 if [ -z "$CLIENT_GPUS" ]; then
     CLIENT_GPUS=$(nvidia-smi -L | wc -l)
 fi
@@ -87,18 +95,17 @@ echo ">> Starting Client Training (Decoupled)"
 echo ">> Project Root:    ${WROOT}"
 echo ">> Data YAML:       ${DATA_YAML}"
 echo ">> Input Weights:   ${WEIGHTS_IN}"
-echo ">> Output Project:  ${PROJECT_OUT}"
-echo ">> Output Name:     ${NAME_OUT}"
+echo ">> Wandb & Output Project:  ${PROJECT_OUT}"
+echo ">> Wandb & Output Name:     ${NAME_OUT}"
 echo ">> Device List:     ${DEVICE_LIST}"
-echo ">> Master Port:     ${MASTER_PORT} (dynamically allocated)"
 echo ">> Extra Args:      ${EXTRA_ARGS}"
 echo "================================================================================"
 
 # Check if files exist before proceeding
-if [ ! -f "${WEIGHTS_IN}" ]; then
-    echo "Error: Input weights file not found at ${WEIGHTS_IN}"
-    exit 1
-fi
+# if [ ! -f "${WEIGHTS_IN}" ]; then
+#     echo "Error: Input weights file not found at ${WEIGHTS_IN}"
+#     exit 1
+# fi
 if [ ! -f "${WROOT}/${DATA_YAML}" ]; then
     echo "Error: Data YAML file not found at ${WROOT}/${DATA_YAML}"
     exit 1
@@ -109,48 +116,38 @@ if [ ! -f "${SINGULARITY_IMG}" ]; then
 fi
 
 # --- 2. Execute YOLOv9 Training inside Singularity ---
-echo ">> Executing training command inside Singularity container..."
+cd "${WROOT}/gyolo"
 
-singularity exec --nv \
-    --bind ${WROOT}:${WROOT} \
-    --bind /home/waue0920/dataset/yolo:/home/waue0920/dataset/yolo \
-    "${SINGULARITY_IMG}" \
-python \
-    "${WROOT}/yolov9/train_dual.py" \
-    --weights "${WEIGHTS_IN}" \
-    --data "${WROOT}/${DATA_YAML}" \
-    --cfg "${MODEL_CFG}" \
-    --project "${PROJECT_OUT}" \
-    --device "${DEVICE_LIST}" \
-    --name "${NAME_OUT}" \
-    ${EXTRA_ARGS} 
+# python "${WROOT}/gyolo/caption/train.py"
+### DDP
+SRUN_CMD=(
+    singularity exec --nv
+    --bind "${WROOT}:${WROOT}"
+    --bind "/home/waue0920/dataset/coco:/home/waue0920/dataset/coco"
+    "${SINGULARITY_IMG}"
+    torchrun --nproc_per_node="$CLIENT_GPUS" --nnodes="$NNODES" 
+    --node_rank="$NODE_RANK" --master_addr="$MASTER_ADDR" --master_port="$MASTER_PORT"
+    "./caption/train.py"
+    --weights "${WEIGHTS_IN}"
+    --data "${WROOT}/${DATA_YAML}"
+    --cfg "${MODEL_CFG}"
+    --project "${PROJECT_OUT}"
+    --name "${NAME_OUT}"
+    --device "${DEVICE_LIST}"
+)
+if [ -n "${EXTRA_ARGS}" ]; then
+    SRUN_CMD+=( ${EXTRA_ARGS} )
+fi
+echo "!! [client_train] FL exec @ Singularity !!"
+echo "${SRUN_CMD[@]}"
 
-###  因為不同client 會搶相同port 的問題，因此跨節點暫時無解
-# singularity exec --nv \
-#     --bind ${WROOT}:${WROOT} \
-#     --bind /home/waue0920/dataset/yolo:/home/waue0920/dataset/yolo \
-#     "${SINGULARITY_IMG}" \
-# torchrun \
-#     --nproc_per_node=${NPROC_PER_NODE} \
-#     --nnodes=${NNODES} \
-#     --node_rank=${NODE_RANK} \
-#     --master_addr=${MASTER_ADDR} \
-#     --master_port=${MASTER_PORT} \
-#     "${WROOT}/yolov9/train_dual.py" \
-#     --weights "${WEIGHTS_IN}" \
-#     --data "${WROOT}/${DATA_YAML}" \
-#     --cfg "${MODEL_CFG}" \
-#     --project "${PROJECT_OUT}" \
-#     --device "${DEVICE_LIST}" \
-#     --name "${NAME_OUT}" \
-#     ${EXTRA_ARGS} # Pass all other hparams
-
+"${SRUN_CMD[@]}"
 EXIT_CODE=$?
 if [ ${EXIT_CODE} -ne 0 ]; then
-    echo "Error: YOLOv9 training failed with exit code ${EXIT_CODE}."
+    echo "Error: Gyolo training failed with exit code ${EXIT_CODE}."
     exit ${EXIT_CODE}
+else
+    echo "================================================================================"
+    echo ">> Client training finished successfully."
+    echo "================================================================================"
 fi
-
-echo "================================================================================"
-echo ">> Client training finished successfully."
-echo "================================================================================"

@@ -4,32 +4,18 @@ import glob
 import sys
 import os
 import time
-import pandas as pd
 from collections import OrderedDict
 from pathlib import Path
 from aggregation import AGGREGATORS
-
-import argparse
-import torch
-import glob
-import sys
-import os
-import time
 import pandas as pd
-from collections import OrderedDict
-from pathlib import Path
-from aggregation import AGGREGATORS
 
-# Add YOLOv9 directory to Python path for model imports
+# Add gyolo directory to Python path for model imports
 if 'WROOT' in os.environ:
-    yolov9_path = os.path.join(os.environ['WROOT'], 'yolov9')
-    if yolov9_path not in sys.path:
-        sys.path.insert(0, yolov9_path)
+    gyolo_path = os.path.join(os.environ['WROOT'], 'gyolo')
+    if gyolo_path not in sys.path:
+        sys.path.insert(0, gyolo_path)
 
 def calculate_alg_complexity(algorithm=None, template_model=None, expected_clients=None, start_time=None):
-    """
-    計算聚合演算法的空間與通訊複雜度
-    """
     BYTE = 8
     elapsed = None
     if start_time is not None:
@@ -67,7 +53,7 @@ def calculate_alg_complexity(algorithm=None, template_model=None, expected_clien
         total_server_bits = base_server_bits + server_state_bits  # NP + 1P + N
         print(f"[SUMMARY]({algorithm}) SpaceComplexity <(N+1)P> (bit): {total_server_bits:,}")
         print(f"[SUMMARY]({algorithm}) CommunicationComplexity <2NP> (bit): {communication_bits:,}")
-    elif algorithm == 'fedyoga':
+    elif algorithm == 'fedawa':
         # Server 額外需要：global_weights(P) + client_history(N²P) + metadata(N*32)
         server_state_bits = param_bits + expected_clients**2 * param_bits 
         total_server_bits = base_server_bits + server_state_bits  # (N+1+N²)P
@@ -82,8 +68,14 @@ def calculate_alg_complexity(algorithm=None, template_model=None, expected_clien
 
     print(f"[SUMMARY]({algorithm}) P= {num_params:,}, N= {expected_clients:,} (Counts)")
 
-def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: int, round_num: int, algorithm: str, **agg_kwargs):
-    start_time = time.time()
+def federated_aggregate(
+        input_dir: Path, 
+        output_file: Path, 
+        expected_clients: int, 
+        round_num: int, 
+        algorithm: str, 
+        **agg_kwargs
+    ):
     print("================================================================================")
     print(f"Starting Federated Aggregation: {algorithm}")
     print(f">> Input directory:  {input_dir}")
@@ -116,13 +108,15 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
     valid_client_paths = []  # Track which clients are valid
     template_model = None
     template_ckpt = None
-    client_sizes = [1] * num_found  # Placeholder: assume equal sizes for now
+    # TODO: This needs to be implemented to get client sizes for weighted average
+    client_sizes = [1] * num_found # Placeholder: assume equal sizes for now
     print(f"[INFO] Using placeholder for client sizes: {client_sizes}")
 
     for i, path in enumerate(client_weights_paths):
         try:
             path_obj = Path(path)  # Convert to Path object for .name attribute
             ckpt = torch.load(path, map_location='cpu')
+            # gyolo best.pt 可能直接是 state_dict 或 dict 需根據實際格式調整
             if 'model' in ckpt:
                 state_dict = ckpt['model'].state_dict()
                 # Check for NaN/Inf values and attempt to fix them
@@ -179,10 +173,17 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
                     if fixed_params:
                         template_model.load_state_dict(state_dict)
                         print(f"[INFO] Template model's BatchNorm statistics also fixed")
+            elif 'state_dict' in ckpt:
+                all_state_dicts.append(ckpt['state_dict'])
+                if i == 0:
+                    template_model = None # This case needs careful handling
+                    template_ckpt = ckpt
             else:
+                # Assuming the ckpt is the state_dict itself
                 all_state_dicts.append(ckpt)
                 if i == 0:
-                    template_ckpt = ckpt
+                    # This case is tricky as we don't have a model structure
+                    template_ckpt = {'model_state_dict': ckpt}
         except Exception as e:
             print(f"\nError: Failed to load weight file: {path}")
             print(f"  - Reason: {e}")
@@ -205,14 +206,15 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
         print("  - Consider using different aggregation algorithm")
         exit(1)
 
-    if template_model is None:
-        print("Error: Could not load template model from client weights")
+    if template_model is None or template_ckpt is None:
+        print("Error: Could not load template model structure from client weights.")
+        print("       Ensure the checkpoint contains the 'model' object.")
         exit(1)
     
     print(f"\n[INFO] Successfully loaded {len(all_state_dicts)} valid client models (skipped {expected_clients - len(all_state_dicts)})")
 
-    # Special handling for fedyoga: rebuild client_vectors with only valid clients
-    if algorithm == 'fedyoga':
+    # Special handling for fedawa: rebuild client_vectors with only valid clients
+    if algorithm == 'fedawa':
         print(f"[INFO] Rebuilding client_vectors for {len(valid_client_paths)} valid clients...")
         client_results_paths = []
         for w_path in valid_client_paths:
@@ -224,11 +226,7 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
         agg_kwargs['global_weights'] = template_model.state_dict()
         client_vectors = []
         for w_path, r_path in zip(valid_client_paths, client_results_paths):
-            ckpt = torch.load(w_path, map_location='cpu')
-            if 'model' in ckpt:
-                weights_history = [ckpt['model'].state_dict()]
-            else:
-                weights_history = [ckpt]
+            weights_history = [torch.load(w_path, map_location='cpu')]
             try:
                 if Path(r_path).exists():
                     df = pd.read_csv(r_path)
@@ -245,7 +243,7 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
                 'history': []
             })
         agg_kwargs['client_vectors'] = client_vectors
-        print(f"[INFO] Created {len(client_vectors)} client_vectors for FedYOGA")
+        print(f"[INFO] Created {len(client_vectors)} client_vectors for FedAWA")
 
     # 3. Perform aggregation
     agg_fn = AGGREGATORS.get(algorithm)
@@ -253,33 +251,74 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
         print(f"Error: Unknown aggregation algorithm: {algorithm}")
         exit(1)
     print(f"\nAggregating weights using {algorithm}...")
-    # 可根據演算法需求傳遞額外參數
-    aggregated = agg_fn(all_state_dicts, **agg_kwargs)
-    print("Aggregation complete.")
-
-    # 4. Save the aggregated model
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    print("Loading aggregated weights into template model...")
-    template_model.load_state_dict(aggregated)
     
-    # Calculate and display complexity
-    calculate_alg_complexity(
-        algorithm=algorithm,
-        template_model=template_model,
-        expected_clients=len(all_state_dicts),
-        start_time=start_time
-    )
+    # 開始計時
+    start_time = time.time()
     
-    model_to_save = {
-        'model': template_model,
-        'optimizer': template_ckpt.get('optimizer', None),
-        'epoch': template_ckpt.get('epoch', -1),
-        'training_results': template_ckpt.get('training_results', None)
-    }
-    torch.save(model_to_save, output_file)
-    print(f"\nSuccessfully saved aggregated model to:")
-    print(f"  -> {output_file}")
-    print("================================================================================")
+    if algorithm == 'fedopt':
+        # fedopt aggregate(client_weights, global_weights, optimizer_state=None)
+        aggregated, optimizer_state = agg_fn(all_state_dicts, **agg_kwargs)
+        print("Aggregation complete.")
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        print("Loading aggregated weights into template model...")
+        template_model.load_state_dict(aggregated)
+        model_to_save = {
+            'model': template_model,
+            'optimizer': template_ckpt.get('optimizer', None),
+            'epoch': template_ckpt.get('epoch', -1),
+            'training_results': template_ckpt.get('training_results', None)
+        }
+        torch.save(model_to_save, output_file)
+        # 保存 optimizer_state
+        opt_state_path = input_dir / f"fedopt_state.pt"
+        torch.save(optimizer_state, opt_state_path)
+        print(f"\nSuccessfully saved aggregated model to:")
+        print(f"  -> {output_file}")
+        print(f"Optimizer state saved to: {opt_state_path}")
+        print("================================================================================")
+        
+        # 計算複雜度分析
+        calculate_alg_complexity(algorithm, template_model, expected_clients, start_time)
+    elif algorithm == 'fedavgm':
+        # fedavgm aggregate(client_weights, client_sizes, global_weights, server_momentum, ...)
+        aggregated, server_momentum = agg_fn(all_state_dicts, **agg_kwargs)
+        print("Aggregation complete.")
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        print("Loading aggregated weights into template model...")
+        template_model.load_state_dict(aggregated)
+        model_to_save = {
+            'model': template_model,
+            'optimizer': template_ckpt.get('optimizer', None),
+            'epoch': template_ckpt.get('epoch', -1),
+            'training_results': template_ckpt.get('training_results', None),
+            'server_momentum': server_momentum  # 可選，若要持續用 momentum
+        }
+        torch.save(model_to_save, output_file)
+        print(f"\nSuccessfully saved aggregated model to:")
+        print(f"  -> {output_file}")
+        print("================================================================================")
+        
+        # 計算複雜度分析
+        calculate_alg_complexity(algorithm, template_model, expected_clients, start_time)
+    else:
+        aggregated = agg_fn(all_state_dicts, **agg_kwargs)
+        print("Aggregation complete.")
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        print("Loading aggregated weights into template model...")
+        template_model.load_state_dict(aggregated)
+        model_to_save = {
+            'model': template_model,
+            'optimizer': template_ckpt.get('optimizer', None),
+            'epoch': template_ckpt.get('epoch', -1),
+            'training_results': template_ckpt.get('training_results', None)
+        }
+        torch.save(model_to_save, output_file)
+        print(f"\nSuccessfully saved aggregated model to:")
+        print(f"  -> {output_file}")
+        print("================================================================================")
+        
+        # 計算複雜度分析
+        calculate_alg_complexity(algorithm, template_model, expected_clients, start_time)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -296,8 +335,25 @@ if __name__ == "__main__":
 
     server_fedprox_mu_env = os.environ.get('SERVER_FEDPROX_MU')
 
-    # 可根據 args.algorithm 傳遞額外參數
+    # 共通參數準備
     agg_kwargs = {}
+    # 先載入 client_weights 以取得 template_model
+    client_weights_pattern = str(args.input_dir / f"r{args.round}_c*" / "weights" / "best.pt")
+    client_weights_paths = sorted(glob.glob(client_weights_pattern))
+    if not client_weights_paths:
+        print(f"Error: No client weights found for aggregation parameter preparation.")
+        exit(1)
+    ckpt = torch.load(client_weights_paths[0], map_location='cpu')
+    if 'model' in ckpt:
+        template_model = ckpt['model']
+    elif 'state_dict' in ckpt:
+        print("Error: aggregation requires a model object in checkpoint.")
+        exit(1)
+    else:
+        print("Error: aggregation requires a model object in checkpoint.")
+        exit(1)
+
+    # 各演算法額外參數
     if args.algorithm == 'fedprox':
         if server_fedprox_mu_env is not None:
             try:
@@ -308,4 +364,30 @@ if __name__ == "__main__":
                 agg_kwargs['mu'] = getattr(args, 'mu', 0.01)
         else:
             agg_kwargs['mu'] = getattr(args, 'mu', 0.01)
+
+    if args.algorithm == 'fednova':
+        agg_kwargs['server_weights'] = template_model.state_dict()
+        agg_kwargs['client_steps'] = [1] * args.expected_clients  # 可改為真實步數
+
+    # Note: fedawa parameters are prepared inside federated_aggregate() after filtering valid clients
+    
+    if args.algorithm == 'fedopt':
+        agg_kwargs['global_weights'] = template_model.state_dict()
+        # 載入前一輪的 optimizer_state (若存在)
+        if args.round > 1:
+            opt_state_path = args.input_dir / f"fedopt_state.pt"
+            if opt_state_path.exists():
+                try:
+                    agg_kwargs['optimizer_state'] = torch.load(opt_state_path, map_location='cpu')
+                    print(f"[INFO] Loaded previous FedOpt optimizer state from: {opt_state_path}")
+                except Exception as e:
+                    print(f"[WARN] Failed to load FedOpt optimizer state: {e}, using fresh state")
+            else:
+                print(f"[WARN] FedOpt optimizer state not found at: {opt_state_path}, using fresh state")
+
+    if args.algorithm == 'fedavgm':
+        agg_kwargs['client_sizes'] = [1] * args.expected_clients
+        agg_kwargs['global_weights'] = template_model.state_dict()
+        agg_kwargs['server_momentum'] = {k: torch.zeros_like(v) for k, v in template_model.state_dict().items()}
+
     federated_aggregate(args.input_dir, args.output_file, args.expected_clients, args.round, args.algorithm, **agg_kwargs)

@@ -83,44 +83,37 @@ def prepare_data(
     lda_alpha: float = 100.0,
 ):
     """
-    Splits a YOLOv9-compatible dataset into multiple partitions for federated learning.
+    Splits a gyolo-compatible dataset into multiple partitions for federated learning.
 
     This function creates symlinks to the original data to save space.
-    Supports: COCO (special handling) + standard YOLOv9 datasets (KITTI, SIM10K, Foggy, Cityscapes, BDD100K)
 
     Args:
-        dataset_name: The name of the dataset (e.g., 'coco', 'kitti', 'bdd100k').
+        dataset_name: The name of the dataset (e.g., 'coco').
         num_clients: The number of clients to partition the data for.
         seed: The random seed for shuffling to ensure reproducibility.
         project_root: The absolute path to the project's root directory.
         source_dir: Optional. The path to the source dataset. 
-                    Defaults to '{project_root}/datasets/{dataset_name}' or 'coco' for COCO.
+                    Defaults to '{project_root}/datasets/{dataset_name}'.
         output_dir: Optional. The path to the output directory for federated data.
-                    Defaults to '{project_root}/federated_data/{dataset_name}_{num_clients}'.
-        lda_alpha: Dirichlet alpha for Non-IID split. >= 100 for IID, < 100 for Non-IID.
+                    Defaults to '{project_root}/federated_data/{dataset_name}'.
     """
-    print(f"--- Starting data preparation for dataset: {dataset_name} ---")
+    print(f"--- Starting data preparation for gyolo dataset: {dataset_name} ---")
     print(f"--- Number of clients: {num_clients} ---")
 
-    # Configure paths based on dataset type
-    is_coco = (dataset_name.lower() == "coco")
-    
-    if is_coco:
-        # COCO dataset: special directory structure
-        if source_dir is None:
-            source_dir = project_root / "coco"
+    # If paths are not provided, construct them based on project_root
+    # 支援 coco 資料集特殊路徑
+    if dataset_name == "coco":
+        source_dir = project_root / "coco"
         source_images_dir = source_dir / "images" / "train2017"
         source_labels_dir = source_dir / "labels" / "train2017"
         source_yaml_path = project_root / "gyolo" / "data" / f"{dataset_name}.yaml"
-        train_subdir = "train2017"  # COCO uses train2017
     else:
-        # Standard YOLOv9 datasets (KITTI, SIM10K, Foggy, Cityscapes, BDD100K)
+        ### TBD: 支援其他資料集格式
         if source_dir is None:
             source_dir = project_root / "datasets" / dataset_name
         source_images_dir = source_dir / "images" / "train"
         source_labels_dir = source_dir / "labels" / "train"
         source_yaml_path = project_root / "data" / f"{dataset_name}.yaml"
-        train_subdir = "train"  # Standard datasets use train
         
     if output_dir is None:
         # Alpha >= 100 視為 IID，< 100 為 Non-IID
@@ -168,65 +161,40 @@ def prepare_data(
         for i, chunk in enumerate(file_chunks):
             print(f"  Client {i+1}: {len(chunk)} images")
     else:
-        # Non-IID 分割：使用 Dirichlet 分割
-        print(f"[Non-IID] Using Dirichlet split (alpha={lda_alpha})")
+        # Non-IID 分割：使用 FedML 的 Dirichlet 分割
+        print(f"[Non-IID] Using FedML Dirichlet split (alpha={lda_alpha})")
         
-        # 根據資料集類型選擇標籤讀取方式
-        if is_coco:
-            # COCO 資料集：從 instances_train2017.json 讀取
-            coco_ann_path = project_root / "coco" / "annotations" / "instances_train2017.json"
-            
-            if not coco_ann_path.is_file():
-                print(f"[ERROR] COCO instances file not found at {coco_ann_path}")
-                print("[ERROR] Non-IID split requires instances_train2017.json")
-                exit(1)
-            
-            print(f"[Non-IID] Loading annotations from {coco_ann_path}")
-            with open(coco_ann_path, 'r') as f:
-                coco_instances = json.load(f)
-            
-            # 建立 image_id -> filename 對應
-            image_id_to_filename = {img['id']: img['file_name'] for img in coco_instances['images']}
-            
-            # 建立 image_id -> category_ids 對應（一張圖可能有多個物件）
-            image_to_categories = {}
-            for ann in coco_instances['annotations']:
-                img_id = ann['image_id']
-                cat_id = ann['category_id']
-                if img_id not in image_to_categories:
-                    image_to_categories[img_id] = set()
-                image_to_categories[img_id].add(cat_id)
-            
-            # 為每張圖片選擇主要類別（取最小的 category_id）
-            filename_to_label = {}
-            for img_id, filename in image_id_to_filename.items():
-                if img_id in image_to_categories:
-                    filename_to_label[filename] = min(image_to_categories[img_id])
-                else:
-                    filename_to_label[filename] = 0
-        else:
-            # 標準 YOLOv9 資料集（KITTI, SIM10K, Foggy, Cityscapes, BDD100K）：從 YOLO 格式標籤文件讀取
-            print(f"[Non-IID] Reading labels from YOLO format files in {source_labels_dir}")
-            filename_to_label = {}
-            
-            for img_file in image_files:
-                base_name = Path(img_file).stem
-                label_file = source_labels_dir / f"{base_name}.txt"
-                
-                if label_file.exists():
-                    # 讀取 YOLO 格式標籤的第一行第一個數字（類別 ID）
-                    with open(label_file, 'r') as f:
-                        lines = f.readlines()
-                        if lines:
-                            # YOLO 格式: class_id x_center y_center width height
-                            class_id = int(lines[0].split()[0])
-                            filename_to_label[img_file] = class_id
-                        else:
-                            # 空標籤文件，設為類別 0
-                            filename_to_label[img_file] = 0
-                else:
-                    # 無標籤文件，設為類別 0
-                    filename_to_label[img_file] = 0
+        # 讀取 COCO instances annotations 以獲取類別標籤
+        coco_ann_path = project_root / "coco" / "annotations" / "instances_train2017.json"
+        
+        if not coco_ann_path.is_file():
+            print(f"[ERROR] COCO instances file not found at {coco_ann_path}")
+            print("[ERROR] Non-IID split requires instances_train2017.json")
+            exit(1)
+        
+        print(f"[Non-IID] Loading annotations from {coco_ann_path}")
+        with open(coco_ann_path, 'r') as f:
+            coco_instances = json.load(f)
+        
+        # 建立 image_id -> filename 對應
+        image_id_to_filename = {img['id']: img['file_name'] for img in coco_instances['images']}
+        
+        # 建立 image_id -> category_ids 對應（一張圖可能有多個物件）
+        image_to_categories = {}
+        for ann in coco_instances['annotations']:
+            img_id = ann['image_id']
+            cat_id = ann['category_id']
+            if img_id not in image_to_categories:
+                image_to_categories[img_id] = set()
+            image_to_categories[img_id].add(cat_id)
+        
+        # 為每張圖片選擇主要類別（取最小的 category_id）
+        filename_to_label = {}
+        for img_id, filename in image_id_to_filename.items():
+            if img_id in image_to_categories:
+                filename_to_label[filename] = min(image_to_categories[img_id])
+            else:
+                filename_to_label[filename] = 0
         
         # 準備給 FedML 的資料
         images_list = []
@@ -270,38 +238,49 @@ def prepare_data(
         original_val_path = source_dir / original_yaml_data['val']
 
     for i in range(1, num_clients + 1):
+        ### gyolo 要處理 annotations, images, labels, stuff 四個資料夾，且 train , val, test 取名為 train2017, val2017, test2017
         client_id = f"c{i}"
         client_dir = output_dir / client_id
         print(f"Processing {client_id}...")
 
-        # Create directory structure based on dataset type
-        client_images_dir = client_dir / "images" / train_subdir
-        client_images_dir.mkdir(parents=True, exist_ok=True)
-        
-        client_labels_dir = client_dir / "labels" / train_subdir
+        ### images 要取名為 train2017
+        client_images_dir = client_dir / "images" / "train2017"
+        client_images_dir.mkdir(parents=True, exist_ok=True)        
+        ### labels 要取名為 train2017
+        client_labels_dir = client_dir / "labels" / "train2017"
         client_labels_dir.mkdir(parents=True, exist_ok=True)
-        
-        # COCO-specific: stuff labels and annotations
-        if is_coco:
-            source_stuff_labels_dir = project_root / "coco" / "stuff" / "train2017"
-            client_stuff_labels_dir = client_dir / "stuff" / "train2017"
-            if source_stuff_labels_dir.is_dir():
-                client_stuff_labels_dir.mkdir(parents=True, exist_ok=True)
-            
-            client_annotations_dir = client_dir / "annotations"
-            client_annotations_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Create symlinks for images and labels
-        symlink_img, symlink_label, symlink_stuff = 0, 0, 0
-        client_image_names = set()  # For COCO captions generation
-        
+        ### stuff 
+        source_stuff_labels_dir = project_root / "coco" / "stuff" / "train2017"
+        client_stuff_labels_dir = client_dir / "stuff" / "train2017"
+        if source_stuff_labels_dir.is_dir():
+            client_stuff_labels_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            print(f"  - No source stuff labels found, skipping stuff symlinks for {client_id}.")
+        ### annotations
+        client_annotations_dir = client_dir / "annotations"        
+        client_annotations_dir.mkdir(parents=True, exist_ok=True)
+        ### annotations, 不可用 symlink 指向 coco 原始資料夾 (caption 會出錯)
+        # source_annotations_dir = project_root / "coco" / "annotations"
+        # client_annotations_dir = client_dir / "annotations"
+        # if source_annotations_dir.is_dir():
+        #     if client_annotations_dir.exists() or client_annotations_dir.is_symlink():
+        #         client_annotations_dir.unlink()
+        #     os.symlink(source_annotations_dir.resolve(), client_annotations_dir)
+        #     print(f"  - Symlinked annotations to {client_annotations_dir}")
+        # else:
+        #     print(f"  - No source annotations found, skipping annotations symlink for {client_id}.")        
+
+
+        symlink_img, symlink_det, symlink_stuff = 0, 0, 0
+        client_image_names = set()
         for image_name in file_chunks[i-1]:
             base_name = Path(image_name).stem
             label_name = f"{base_name}.txt"
             source_image_path = source_images_dir / image_name
             source_label_path = source_labels_dir / label_name
+            source_stuff_label_path = source_stuff_labels_dir / label_name
 
-            # Image symlink
+            # 影像 symlink
             if source_image_path.exists():
                 os.symlink(source_image_path.resolve(), client_images_dir / image_name)
                 symlink_img += 1
@@ -309,61 +288,51 @@ def prepare_data(
             else:
                 print(f"Warning: Image file not found for {image_name}, skipping.")
 
-            # Label symlink
+            # detection label symlink
             if source_label_path.exists():
                 os.symlink(source_label_path.resolve(), client_labels_dir / label_name)
-                symlink_label += 1
+                symlink_det += 1
             else:
-                print(f"Warning: Label file not found for {image_name}, skipping.")
+                print(f"Warning: Detection label not found for {image_name}, skipping.")
 
-            # COCO-specific: stuff label symlink
-            if is_coco:
-                source_stuff_label_path = source_stuff_labels_dir / label_name
-                if source_stuff_labels_dir.is_dir() and source_stuff_label_path.exists():
-                    os.symlink(source_stuff_label_path.resolve(), client_stuff_labels_dir / label_name)
-                    symlink_stuff += 1
-        
-        print(f"  - Created {symlink_img} image symlinks")
-        print(f"  - Created {symlink_label} label symlinks")
-        if is_coco and symlink_stuff > 0:
-            print(f"  - Created {symlink_stuff} stuff symlinks")
+            # stuff label symlink
+            if source_stuff_labels_dir.is_dir() and source_stuff_label_path.exists():
+                os.symlink(source_stuff_label_path.resolve(), client_stuff_labels_dir / label_name)
+                symlink_stuff += 1
+            elif source_stuff_labels_dir.is_dir():
+                print(f"Warning: Stuff label not found for {image_name}, skipping.")
 
-        # COCO-specific: Generate client-specific captions_train2017.json
-        if is_coco:
-            coco_ann_path = project_root / "coco" / "annotations" / "captions_train2017.json"
-            client_ann_path = client_annotations_dir / "captions_train2017.json"
-            if coco_ann_path.is_file():
-                with open(coco_ann_path, 'r') as f:
-                    coco_ann = json.load(f)
-                # 建立 image_id 對應表
-                image_id_map = {str(img['file_name']).split('.')[0]: img['id'] for img in coco_ann['images']}
-                client_image_ids = set([image_id_map[name] for name in client_image_names if name in image_id_map])
-                # 過濾 images/annotations
-                client_images = [img for img in coco_ann['images'] if img['id'] in client_image_ids]
-                client_annotations = [ann for ann in coco_ann['annotations'] if ann['image_id'] in client_image_ids]
-                # 寫出 client captions_train.json
-                client_coco_ann = coco_ann.copy()
-                client_coco_ann['images'] = client_images
-                client_coco_ann['annotations'] = client_annotations
-                with open(client_ann_path, 'w') as f:
-                    json.dump(client_coco_ann, f)
-                print(f"  - Generated client captions_train2017.json at {client_ann_path}")
+        # 分割 captions_train2017.json，產生 client 專屬 captions_train2017.json
+
+        coco_ann_path = project_root / "coco" / "annotations" / "captions_train2017.json"
+        client_ann_path = client_annotations_dir / "captions_train2017.json"
+        if coco_ann_path.is_file():
+            with open(coco_ann_path, 'r') as f:
+                coco_ann = json.load(f)
+            # 建立 image_id 對應表
+            image_id_map = {str(img['file_name']).split('.')[0]: img['id'] for img in coco_ann['images']}
+            client_image_ids = set([image_id_map[name] for name in client_image_names if name in image_id_map])
+            # 過濾 images/annotations
+            client_images = [img for img in coco_ann['images'] if img['id'] in client_image_ids]
+            client_annotations = [ann for ann in coco_ann['annotations'] if ann['image_id'] in client_image_ids]
+            # 寫出 client captions_train.json
+            client_coco_ann = coco_ann.copy()
+            client_coco_ann['images'] = client_images
+            client_coco_ann['annotations'] = client_annotations
+            with open(client_ann_path, 'w') as f:
+                json.dump(client_coco_ann, f)
+            print(f"  - Generated client captions_train2017.json at {client_ann_path}")
+        else:
+            print(f"  - No source captions_train2017.json found, skipping client annotation json for {client_id}.")
 
         # --- 4. Generate Client YAML file ---
         client_yaml_data = original_yaml_data.copy()
         client_yaml_data['path'] = str(client_dir)
-        client_yaml_data['train'] = f'images/{train_subdir}'
-        
-        if is_coco:
-            # COCO-specific paths
-            client_yaml_data['val'] = str(project_root / "coco" / "images" / "val2017")
-            client_yaml_data['stuff'] = 'stuff/train2017'
-            client_yaml_data['test'] = str(project_root / "coco" / "test-dev2017.txt")
-        else:
-            # Standard YOLOv9 datasets: use original validation path
-            client_yaml_data['val'] = str(original_val_path)
-        
-        client_yaml_data.pop('download', None)  # Remove download field
+        client_yaml_data['train'] = 'images/train2017'
+        client_yaml_data['val'] = str(project_root / "coco" / "images" / "val2017")
+        client_yaml_data['stuff'] = str('stuff/train2017')
+        client_yaml_data['test'] = str(project_root / "coco" / "test-dev2017.txt")
+        client_yaml_data.pop('download', None)  # 移除 download 欄位
 
         client_yaml_path = output_dir / f"{client_id}.yaml"
         with open(client_yaml_path, 'w') as f:
