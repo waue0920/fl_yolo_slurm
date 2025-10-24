@@ -1,0 +1,19 @@
+# data/kittiO.yaml
+path: ../datasets/kittiO  # Path to the kittiO dataset root, relative to this file's location
+
+train: images/train  # Path to training images, relative to 'path'
+val: images/val      # Path to validation images, relative to 'path'
+
+# Number of classes
+nc: 8
+
+# Class names based on classes.json
+names:
+  0: Car
+  1: Pedestrian
+  2: Van
+  3: Cyclist
+  4: Truck
+  5: Misc
+  6: Tram
+  7: Person_sitting

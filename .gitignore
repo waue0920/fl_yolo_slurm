@@ -4,6 +4,7 @@
 /experiments/
 /wandb/
 /archive/
+/yolov9/wandb/
 yolov9-*.pt
 yolo9t2*.sif
 

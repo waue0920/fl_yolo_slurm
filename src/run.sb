@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=fl_yolo_slurm
 #SBATCH --partition=gp2d      ## Partition: gtest | gp2d
-#SBATCH --account=GOV113038  ## iService_ID Project ID
+#SBATCH --account=GOV113119  ## iService_ID Project ID
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus-per-node=1

@@ -61,20 +61,89 @@ def softmax(x, temperature=1.0):
     return e_x / e_x.sum(axis=0)
 
 
+def compute_balanced_client_weights(client_weights, client_data_info=None):
+    """
+    方案 B: 根據客戶端的數據多樣性計算平衡權重
+    
+    目的: 降低過度代表某個類別的客戶端 (如 Client 4 的 91% Rider)
+    
+    Args:
+        client_weights: list of OrderedDict，每個客戶端的權重
+        client_data_info: list of dict，每個客戶端的數據統計信息
+                         格式: [{'class_counts': {...}, 'total_samples': ...}, ...]
+    
+    Returns:
+        numpy array, shape [num_clients], 正規化後的權重 (sum=1)
+    """
+    num_clients = len(client_weights)
+    
+    # 如果沒有提供數據信息，使用均等權重
+    if client_data_info is None or len(client_data_info) == 0:
+        print("[FedYOGA] No client data info provided, using uniform weights")
+        return np.ones(num_clients) / num_clients
+    
+    # 計算每個客戶端的「數據多樣性評分」
+    diversity_scores = np.ones(num_clients)
+    
+    for i, info in enumerate(client_data_info):
+        if info is None or 'class_counts' not in info:
+            continue
+        
+        class_counts = info['class_counts']
+        total_samples = sum(class_counts.values()) if isinstance(class_counts, dict) else 1
+        
+        if total_samples == 0:
+            continue
+        
+        # 找出最主導的類別比例
+        max_class_count = max(class_counts.values()) if isinstance(class_counts, dict) else total_samples
+        max_class_ratio = max_class_count / total_samples
+        
+        # 根據不平衡程度調整權重
+        # 如果某類別 > 90% (極端不平衡): 權重 = 0.25
+        # 如果某類別 > 70% (嚴重不平衡): 權重 = 0.5
+        # 如果某類別 > 50% (不平衡):     權重 = 0.75
+        # 否則 (平衡):                  權重 = 1.0
+        
+        if max_class_ratio > 0.90:
+            diversity_scores[i] = 0.25
+            print(f"[FedYOGA-BalanceWeight] Client {i+1}: Extreme imbalance ({max_class_ratio*100:.1f}%), weight=0.25")
+        elif max_class_ratio > 0.70:
+            diversity_scores[i] = 0.5
+            print(f"[FedYOGA-BalanceWeight] Client {i+1}: Severe imbalance ({max_class_ratio*100:.1f}%), weight=0.5")
+        elif max_class_ratio > 0.50:
+            diversity_scores[i] = 0.75
+            print(f"[FedYOGA-BalanceWeight] Client {i+1}: Imbalance ({max_class_ratio*100:.1f}%), weight=0.75")
+        else:
+            diversity_scores[i] = 1.0
+            print(f"[FedYOGA-BalanceWeight] Client {i+1}: Balanced ({max_class_ratio*100:.1f}%), weight=1.0")
+    
+    # 正規化權重（sum = 1）
+    total_score = np.sum(diversity_scores)
+    balanced_weights = diversity_scores / total_score if total_score > 0 else np.ones(num_clients) / num_clients
+    
+    print(f"[FedYOGA-BalanceWeight] Final weights: {[f'{w:.4f}' for w in balanced_weights]}")
+    print(f"[FedYOGA-BalanceWeight] Weight reduction for Client 4: {(1/num_clients - balanced_weights[3])/(1/num_clients)*100:.1f}%")
+    
+    return balanced_weights
+
+
 def aggregate(client_weights, client_vectors, global_weights, **kwargs):
     history_window = int(os.environ.get('SERVER_FEDYOGA_HISTORY_WINDOW', 5))
-    pca_dim = int(os.environ.get('SERVER_FEDYOGA_PCA_DIM', 4))
+    pca_dim = int(os.environ.get('SERVER_FEDYOGA_PCA_DIM', 2))  # 修正：應該遠小於客戶端數量
     softmax_temperature = float(os.environ.get('SERVER_FEDYOGA_SOFTMAX_TEMPERATURE', 1.0))
     lossdrop_weight = float(os.environ.get('SERVER_FEDYOGA_LOSSDROP_WEIGHT', 1.0))
     gradvar_weight = float(os.environ.get('SERVER_FEDYOGA_GRADVAR_WEIGHT', 1.0))
     pca_solver = os.environ.get('SERVER_FEDYOGA_PCA_SOLVER', 'full')
     norm_eps = float(os.environ.get('SERVER_FEDYOGA_NORM_EPS', 1e-8))
-    # Add clipping threshold for Non-IID scenarios
-    clip_threshold = float(os.environ.get('SERVER_FEDYOGA_CLIP_THRESHOLD', 10.0))
+    # 修正：裁剪閾值應該在 PCA 後應用，且更寬鬆
+    clip_threshold_pre = float(os.environ.get('SERVER_FEDYOGA_CLIP_THRESHOLD_PRE', 1000.0))  # PCA 前粗略裁剪
+    clip_threshold_post = float(os.environ.get('SERVER_FEDYOGA_CLIP_THRESHOLD_POST', 10.0))  # PCA 後精細裁剪
     
     num_clients = len(client_weights)
     
-    print(f"[FedYOGA] Aggregating {num_clients} clients with PCA_DIM={pca_dim}, CLIP_THRESHOLD={clip_threshold}")
+    print(f"[FedYOGA] Aggregating {num_clients} clients with PCA_DIM={pca_dim}")
+    print(f"[FedYOGA] Clipping thresholds: PRE={clip_threshold_pre}, POST={clip_threshold_post}")
     
     # 1. 計算 Ucli_r = wi - global_weights
     Ucli_list = []
@@ -129,18 +198,34 @@ def aggregate(client_weights, client_vectors, global_weights, **kwargs):
         print(f"[WARNING] After imputation, remaining NaN: {rem_nan}, Inf: {rem_inf}. Replacing them with 0.0")
         Ucli_arr = np.nan_to_num(Ucli_arr, nan=0.0, posinf=0.0, neginf=0.0)
 
-    # Clip extreme values for Non-IID stability
+    # 修正：PCA 前只做寬鬆的極端值保護，避免破壞信號
     max_abs_val = np.abs(Ucli_arr).max()
-    if max_abs_val > clip_threshold:
-        print(f"[WARNING] Extreme values detected (max: {max_abs_val:.2f}), clipping to ±{clip_threshold}")
-        Ucli_arr = np.clip(Ucli_arr, -clip_threshold, clip_threshold)
+    if max_abs_val > clip_threshold_pre:
+        print(f"[WARNING] Pre-PCA: Extreme values detected (max: {max_abs_val:.2f}), clipping to ±{clip_threshold_pre}")
+        Ucli_arr = np.clip(Ucli_arr, -clip_threshold_pre, clip_threshold_pre)
+    
+    print(f"[FedYOGA] Pre-PCA statistics:")
+    print(f"  - Mean: {np.mean(Ucli_arr):.6f}, Std: {np.std(Ucli_arr):.6f}")
+    print(f"  - Min: {np.min(Ucli_arr):.6f}, Max: {np.max(Ucli_arr):.6f}")
     
     # 2. 降維 (PCA) + Normalize
-    n_components = min(pca_dim, Ucli_arr.shape[0], Ucli_arr.shape[1])
+    # 修正：確保 PCA 維度遠小於客戶端數量，避免過擬合
+    n_components = min(pca_dim, max(1, Ucli_arr.shape[0] - 1), Ucli_arr.shape[1])
     print(f"[FedYOGA] Performing PCA reduction: {Ucli_arr.shape[1]} → {n_components} dimensions")
     
     try:
         Vcli_arr = pca_reduce(Ucli_arr, n_components=n_components, solver=pca_solver)
+        
+        # 修正：PCA 後再做精細裁剪，保護降維後的特徵空間
+        pca_max = np.abs(Vcli_arr).max()
+        if pca_max > clip_threshold_post:
+            print(f"[WARNING] Post-PCA: Clipping features from ±{pca_max:.2f} to ±{clip_threshold_post}")
+            Vcli_arr = np.clip(Vcli_arr, -clip_threshold_post, clip_threshold_post)
+        
+        print(f"[FedYOGA] Post-PCA statistics:")
+        print(f"  - Mean: {np.mean(Vcli_arr):.6f}, Std: {np.std(Vcli_arr):.6f}")
+        print(f"  - Min: {np.min(Vcli_arr):.6f}, Max: {np.max(Vcli_arr):.6f}")
+        
     except Exception as e:
         print(f"[ERROR] PCA failed: {e}")
         print(f"[FALLBACK] Using simple averaging instead of FedYOGA")
@@ -153,6 +238,7 @@ def aggregate(client_weights, client_vectors, global_weights, **kwargs):
                 agg_weights[k] += wi[k] / num_clients
         return agg_weights
     
+    # 正規化：每個客戶端的 PCA 特徵向量
     Vcli_arr = Vcli_arr / (np.linalg.norm(Vcli_arr, axis=1, keepdims=True) + norm_eps)
     # 3. 歷史窗口平均 (假設 client_vectors 裡有歷史)
     Hcli_arr = []
@@ -177,11 +263,48 @@ def aggregate(client_weights, client_vectors, global_weights, **kwargs):
     # 5. 計算聚合權重 ai (softmax)
     scores = np.linalg.norm(ClientVector_arr, axis=1)
     ai = softmax(scores, temperature=softmax_temperature)
+    
+    # 方案 B: 應用數據平衡加權（可選）
+    enable_balance_weight = os.environ.get('SERVER_FEDYOGA_ENABLE_BALANCE_WEIGHT', 'false').lower() == 'true'
+    if enable_balance_weight:
+        # 從 client_vectors 中提取數據分佈信息
+        client_data_info = []
+        for vec in client_vectors:
+            if 'data_distribution' in vec:
+                client_data_info.append(vec['data_distribution'])
+            else:
+                client_data_info.append(None)
+        
+        # 計算基於數據多樣性的權重
+        balance_weights = compute_balanced_client_weights(client_weights, client_data_info)
+        
+        # 合併 FedYOGA 權重和平衡權重
+        # ai = ai * balance_weights（逐元素乘積）
+        ai = ai * balance_weights
+        ai = ai / np.sum(ai)  # 重新正規化
+        
+        print(f"[FedYOGA] After balance weighting: {[f'{w:.4f}' for w in ai]}")
+    
     # 6. 聚合 Wglo_r = Σ(Wcli_r × ai)
+    print(f"[FedYOGA] Aggregation weights: {[f'{w:.4f}' for w in ai]}")
+    
     agg_weights = OrderedDict()
     for k in global_weights.keys():
         agg_weights[k] = torch.zeros_like(global_weights[k], dtype=torch.float32)
     for wi, a in zip(client_weights, ai):
         for k in agg_weights.keys():
             agg_weights[k] += a * wi[k]
+    
+    # 修正：聚合後檢查並修復 BatchNorm 參數
+    for k in agg_weights.keys():
+        if 'running_mean' in k or 'running_var' in k or 'num_batches_tracked' in k:
+            if torch.isnan(agg_weights[k]).any() or torch.isinf(agg_weights[k]).any():
+                print(f"[FedYOGA-FIX] Detected NaN/Inf in {k}, resetting to safe defaults")
+                if 'running_mean' in k:
+                    agg_weights[k] = torch.zeros_like(agg_weights[k])
+                elif 'running_var' in k:
+                    agg_weights[k] = torch.ones_like(agg_weights[k])
+                elif 'num_batches_tracked' in k:
+                    agg_weights[k] = torch.zeros_like(agg_weights[k])
+    
     return agg_weights

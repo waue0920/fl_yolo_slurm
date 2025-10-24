@@ -123,6 +123,7 @@ python \
     --project "${PROJECT_OUT}" \
     --device "${DEVICE_LIST}" \
     --name "${NAME_OUT}" \
+    --exist-ok \
     ${EXTRA_ARGS} 
 
 ###  因為不同client 會搶相同port 的問題，因此跨節點暫時無解

@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --partition=gtest      ## Partition: gtest | gp2d
-#SBATCH --account=GOV113038
+#SBATCH --partition=gp2d      ## Partition: gtest | gp2d
+#SBATCH --account=GOV109134
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --ntasks-per-node=1

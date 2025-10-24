@@ -211,8 +211,8 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
     
     print(f"\n[INFO] Successfully loaded {len(all_state_dicts)} valid client models (skipped {expected_clients - len(all_state_dicts)})")
 
-    # Special handling for fedyoga: rebuild client_vectors with only valid clients
-    if algorithm == 'fedyoga':
+    # Special handling for fedyoga and fedawa: rebuild client_vectors with only valid clients
+    if algorithm in ['fedyoga', 'fedawa']:
         print(f"[INFO] Rebuilding client_vectors for {len(valid_client_paths)} valid clients...")
         client_results_paths = []
         for w_path in valid_client_paths:
@@ -245,7 +245,7 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
                 'history': []
             })
         agg_kwargs['client_vectors'] = client_vectors
-        print(f"[INFO] Created {len(client_vectors)} client_vectors for FedYOGA")
+        print(f"[INFO] Created {len(client_vectors)} client_vectors for {algorithm.upper()}")
 
     # 3. Perform aggregation
     agg_fn = AGGREGATORS.get(algorithm)
@@ -253,8 +253,25 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
         print(f"Error: Unknown aggregation algorithm: {algorithm}")
         exit(1)
     print(f"\nAggregating weights using {algorithm}...")
-    # 可根據演算法需求傳遞額外參數
-    aggregated = agg_fn(all_state_dicts, **agg_kwargs)
+    
+    # 根據演算法型態呼叫並處理返回值
+    if algorithm == 'fedopt':
+        # FedOpt 返回 (aggregated_weights, optimizer_state)
+        aggregated, optimizer_state = agg_fn(all_state_dicts, **agg_kwargs)
+    elif algorithm == 'fedavgm':
+        # FedAvgM 返回 (aggregated_weights, server_momentum)
+        aggregated, server_momentum = agg_fn(all_state_dicts, **agg_kwargs)
+    elif algorithm == 'fedawa':
+        # FedAWA 返回 (aggregated_weights, T_weights_state)
+        aggregated, T_weights_state = agg_fn(all_state_dicts, **agg_kwargs)
+        # 保存 T_weights_state 供下一轮使用
+        t_weights_path = input_dir / f"fedawa_state.pt"
+        torch.save(T_weights_state, t_weights_path)
+        print(f"[INFO] Saved FedAWA T_weights state to: {t_weights_path}")
+    else:
+        # 其他演算法返回 aggregated_weights dict
+        aggregated = agg_fn(all_state_dicts, **agg_kwargs)
+    
     print("Aggregation complete.")
 
     # 4. Save the aggregated model
@@ -296,8 +313,22 @@ if __name__ == "__main__":
 
     server_fedprox_mu_env = os.environ.get('SERVER_FEDPROX_MU')
 
-    # 可根據 args.algorithm 傳遞額外參數
+    # 需要先載入 template_model 以取得權重結構
+    client_weights_pattern = str(args.input_dir / f"r{args.round}_c*" / "weights" / "best.pt")
+    client_weights_paths = sorted(glob.glob(client_weights_pattern))
+    if not client_weights_paths:
+        print(f"Error: No client weights found for aggregation parameter preparation.")
+        exit(1)
+    ckpt = torch.load(client_weights_paths[0], map_location='cpu')
+    if 'model' in ckpt:
+        template_model = ckpt['model']
+    else:
+        print("Error: aggregation requires a model object in checkpoint.")
+        exit(1)
+
+    # 各演算法額外參數準備
     agg_kwargs = {}
+    
     if args.algorithm == 'fedprox':
         if server_fedprox_mu_env is not None:
             try:
@@ -308,4 +339,42 @@ if __name__ == "__main__":
                 agg_kwargs['mu'] = getattr(args, 'mu', 0.01)
         else:
             agg_kwargs['mu'] = getattr(args, 'mu', 0.01)
+    
+    if args.algorithm == 'fednova':
+        agg_kwargs['server_weights'] = template_model.state_dict()
+        agg_kwargs['client_steps'] = [1] * args.expected_clients  # 可改為真實步數
+    
+    if args.algorithm == 'fedopt':
+        agg_kwargs['global_weights'] = template_model.state_dict()
+        # 載入前一輪的 optimizer_state (若存在)
+        if args.round > 1:
+            opt_state_path = args.input_dir / f"fedopt_state.pt"
+            if opt_state_path.exists():
+                try:
+                    agg_kwargs['optimizer_state'] = torch.load(opt_state_path, map_location='cpu')
+                    print(f"[INFO] Loaded previous FedOpt optimizer state from: {opt_state_path}")
+                except Exception as e:
+                    print(f"[WARN] Failed to load FedOpt optimizer state: {e}, using fresh state")
+            else:
+                print(f"[WARN] FedOpt optimizer state not found at: {opt_state_path}, using fresh state")
+    
+    if args.algorithm == 'fedavgm':
+        agg_kwargs['client_sizes'] = [1] * args.expected_clients
+        agg_kwargs['global_weights'] = template_model.state_dict()
+        agg_kwargs['server_momentum'] = {k: torch.zeros_like(v) for k, v in template_model.state_dict().items()}
+    
+    if args.algorithm == 'fedawa':
+        agg_kwargs['global_weights'] = template_model.state_dict()
+        # 载入前一轮的 T_weights 状态 (若存在)
+        if args.round > 1:
+            t_weights_path = args.input_dir / f"fedawa_state.pt"
+            if t_weights_path.exists():
+                try:
+                    agg_kwargs['T_weights_state'] = torch.load(t_weights_path, map_location='cpu')
+                    print(f"[INFO] Loaded previous FedAWA T_weights state from: {t_weights_path}")
+                except Exception as e:
+                    print(f"[WARN] Failed to load FedAWA T_weights state: {e}, using fresh state")
+            else:
+                print(f"[INFO] FedAWA T_weights state not found at: {t_weights_path}, using fresh state")
+    
     federated_aggregate(args.input_dir, args.output_file, args.expected_clients, args.round, args.algorithm, **agg_kwargs)

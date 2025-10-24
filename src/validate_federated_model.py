@@ -322,8 +322,20 @@ def summary_results(results_dict, output_dir, class_names=None, dataset_info=Non
         f.write(f"{'Model':<15} {'mAP@0.5':<10} {'mAP@0.75':<10} {'mAP@0.5:0.95':<12} {'Precision':<10} {'Recall':<10}\n")
         f.write("-" * 80 + "\n")
         
-        # Sort models by name for consistent ordering
-        for model_name in sorted(results_dict.keys()):
+        # Sort models: baseline first, then rounds by numeric order
+        def sort_key(name):
+            if name == 'baseline':
+                return (0, 0)  # baseline comes first
+            elif name.startswith('round_'):
+                try:
+                    round_num = int(name.split('_')[1])
+                    return (1, round_num)  # rounds sorted by number
+                except (ValueError, IndexError):
+                    return (2, name)  # fallback to alphabetical
+            else:
+                return (2, name)  # other models sorted alphabetically
+        
+        for model_name in sorted(results_dict.keys(), key=sort_key):
             metrics = results_dict[model_name]
             if metrics:
                 map50 = f"{metrics.get('mAP@0.5', 0):.3f}"
@@ -361,8 +373,21 @@ def summary_results(results_dict, output_dir, class_names=None, dataset_info=Non
             f.write(header + "\n")
             f.write("-" * len(header) + "\n")
             
+            # Sort models: baseline first, then rounds by numeric order
+            def sort_key(name):
+                if name == 'baseline':
+                    return (0, 0)
+                elif name.startswith('round_'):
+                    try:
+                        round_num = int(name.split('_')[1])
+                        return (1, round_num)
+                    except (ValueError, IndexError):
+                        return (2, name)
+                else:
+                    return (2, name)
+            
             # 每個模型的數據
-            for model_name in sorted(results_dict.keys()):
+            for model_name in sorted(results_dict.keys(), key=sort_key):
                 metrics = results_dict[model_name]
                 if metrics and 'per_class_ap50' in metrics:
                     row = f"{model_name:<15}"
@@ -382,8 +407,21 @@ def summary_results(results_dict, output_dir, class_names=None, dataset_info=Non
             f.write(header + "\n")
             f.write("-" * len(header) + "\n")
             
+            # Sort models: baseline first, then rounds by numeric order
+            def sort_key(name):
+                if name == 'baseline':
+                    return (0, 0)
+                elif name.startswith('round_'):
+                    try:
+                        round_num = int(name.split('_')[1])
+                        return (1, round_num)
+                    except (ValueError, IndexError):
+                        return (2, name)
+                else:
+                    return (2, name)
+            
             # 每個模型的數據
-            for model_name in sorted(results_dict.keys()):
+            for model_name in sorted(results_dict.keys(), key=sort_key):
                 metrics = results_dict[model_name]
                 if metrics and 'per_class_ap' in metrics:
                     row = f"{model_name:<15}"
