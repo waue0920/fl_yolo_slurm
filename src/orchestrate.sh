@@ -58,7 +58,7 @@ if [ -z "$EXP_ID" ]; then
     RUN_COUNT=$(find "${EXPERIMENTS_BASE_DIR}" -maxdepth 1 -type d | wc -l)
     RUN_NUM=$((RUN_COUNT))
     TIMESTAMP=$(date +%Y%m%d%H%M)
-    EXP_ID="${RUN_NUM}_${DATASET_NAME}_${CLIENT_NUM}C_${TOTAL_ROUNDS}R_${TIMESTAMP}"
+    EXP_ID="${RUN_NUM}_${DATASET_NAME}_${SERVER_ALG}_${CLIENT_NUM}C_${TOTAL_ROUNDS}R_${TIMESTAMP}"
 fi
 
 EXP_DIR="${EXPERIMENTS_BASE_DIR}/${EXP_ID}"

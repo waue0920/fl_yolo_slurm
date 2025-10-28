@@ -1,0 +1,1362 @@
+==========================================
+        DRY RUN MODE ENABLED
+==========================================
+No actual training or aggregation will be performed.
+Commands will be displayed for review only.
+==========================================
+
+Auto-detected WROOT: /home/waue0920/fl_yolo_slurm
+Import /home/waue0920/fl_yolo_slurm/src/env.sh
+Overriding SERVER_ALG from env.sh with CLI value: fedavg
+Overriding DATASET_NAME from env.sh with CLI value: bdd100kO
+GPU Check: 2 GPU(s) detected - OK
+========== Environment Configuration ==========
+WROOT:           /home/waue0920/fl_yolo_slurm
+DATASET_NAME:    bdd100kO
+CLIENT_NUM:      4
+TOTAL_ROUNDS:    2
+EXP_ID:          20_bdd100kO_fedavg_4C_2R_202510281651
+RUN_NUM:         20
+SERVER_ALG:      fedavg
+DETECTED_GPUS:   2
+BATCH_SIZE:      32
+EPOCHS:          10
+VALIDATION:      true
+DRY_RUN:         true
+==================================================
+######################################################################
+##  Initializing Experiment Directories
+##  Experiment ID: 20_bdd100kO_fedavg_4C_2R_202510281651
+######################################################################
+##  STARTING STANDALONE FEDERATED LEARNING EXPERIMENT 
+##  Experiment Directory: /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651
+##  Environment: /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/env.sh
+
+--- STEP 1: Starting Federated Learning Rounds... ---
+
+==================[ ROUND 1 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+[EXECUTING] Sequential client training for round 1:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651
+>>   Run Name:        r1_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651 --name r1_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 1 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651
+>>   Run Name:        r1_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651 --name r1_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 1 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651
+>>   Run Name:        r1_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651 --name r1_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 1 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651
+>>   Run Name:        r1_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651 --name r1_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 1 complete.
+
+--> All client training for round 1 completed successfully.
+[EXECUTING] Federated aggregation for round 1:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt" \
+    --expected-clients "4" \
+    --round "1" \
+    --algorithm "fedavg"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 1 complete.
+
+==================[ ROUND 2 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+[EXECUTING] Sequential client training for round 2:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651
+>>   Run Name:        r2_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651 --name r2_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 2 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651
+>>   Run Name:        r2_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651 --name r2_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 2 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651
+>>   Run Name:        r2_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651 --name r2_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 2 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651
+>>   Run Name:        r2_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651 --name r2_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 2 complete.
+
+--> All client training for round 2 completed successfully.
+[EXECUTING] Federated aggregation for round 2:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/client_outputs/20_bdd100kO_fedavg_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r2.pt" \
+    --expected-clients "4" \
+    --round "2" \
+    --algorithm "fedavg"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 2 complete.
+
+######################################################################
+##
+##  STANDALONE FEDERATED LEARNING EXPERIMENT COMPLETED
+##  Final model: /home/waue0920/fl_yolo_slurm/experiments/20_bdd100kO_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r2.pt
+##
+######################################################################
+
+--- STEP 2: Model Validation ---
+[DRY-RUN] Would execute validation
+==========================================
+        DRY RUN MODE ENABLED
+==========================================
+No actual training or aggregation will be performed.
+Commands will be displayed for review only.
+==========================================
+
+Auto-detected WROOT: /home/waue0920/fl_yolo_slurm
+Import /home/waue0920/fl_yolo_slurm/src/env.sh
+Overriding SERVER_ALG from env.sh with CLI value: fedavgm
+Overriding DATASET_NAME from env.sh with CLI value: bdd100kO
+GPU Check: 2 GPU(s) detected - OK
+========== Environment Configuration ==========
+WROOT:           /home/waue0920/fl_yolo_slurm
+DATASET_NAME:    bdd100kO
+CLIENT_NUM:      4
+TOTAL_ROUNDS:    2
+EXP_ID:          22_bdd100kO_fedavgm_4C_2R_202510281651
+RUN_NUM:         22
+SERVER_ALG:      fedavgm
+DETECTED_GPUS:   2
+BATCH_SIZE:      32
+EPOCHS:          10
+VALIDATION:      true
+DRY_RUN:         true
+==================================================
+######################################################################
+##  Initializing Experiment Directories
+##  Experiment ID: 22_bdd100kO_fedavgm_4C_2R_202510281651
+######################################################################
+##  STARTING STANDALONE FEDERATED LEARNING EXPERIMENT 
+##  Experiment Directory: /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651
+##  Environment: /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/env.sh
+
+--- STEP 1: Starting Federated Learning Rounds... ---
+
+==================[ ROUND 1 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+[EXECUTING] Sequential client training for round 1:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651
+>>   Run Name:        r1_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651 --name r1_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 1 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651
+>>   Run Name:        r1_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651 --name r1_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 1 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651
+>>   Run Name:        r1_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651 --name r1_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 1 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651
+>>   Run Name:        r1_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651 --name r1_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 1 complete.
+
+--> All client training for round 1 completed successfully.
+[EXECUTING] Federated aggregation for round 1:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt" \
+    --expected-clients "4" \
+    --round "1" \
+    --algorithm "fedavgm"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 1 complete.
+
+==================[ ROUND 2 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+[EXECUTING] Sequential client training for round 2:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651
+>>   Run Name:        r2_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651 --name r2_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 2 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651
+>>   Run Name:        r2_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651 --name r2_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 2 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651
+>>   Run Name:        r2_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651 --name r2_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 2 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651
+>>   Run Name:        r2_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651 --name r2_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 2 complete.
+
+--> All client training for round 2 completed successfully.
+[EXECUTING] Federated aggregation for round 2:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/client_outputs/22_bdd100kO_fedavgm_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r2.pt" \
+    --expected-clients "4" \
+    --round "2" \
+    --algorithm "fedavgm"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 2 complete.
+
+######################################################################
+##
+##  STANDALONE FEDERATED LEARNING EXPERIMENT COMPLETED
+##  Final model: /home/waue0920/fl_yolo_slurm/experiments/22_bdd100kO_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r2.pt
+##
+######################################################################
+
+--- STEP 2: Model Validation ---
+[DRY-RUN] Would execute validation
+==========================================
+        DRY RUN MODE ENABLED
+==========================================
+No actual training or aggregation will be performed.
+Commands will be displayed for review only.
+==========================================
+
+Auto-detected WROOT: /home/waue0920/fl_yolo_slurm
+Import /home/waue0920/fl_yolo_slurm/src/env.sh
+Overriding SERVER_ALG from env.sh with CLI value: fedawa
+Overriding DATASET_NAME from env.sh with CLI value: bdd100kO
+GPU Check: 2 GPU(s) detected - OK
+========== Environment Configuration ==========
+WROOT:           /home/waue0920/fl_yolo_slurm
+DATASET_NAME:    bdd100kO
+CLIENT_NUM:      4
+TOTAL_ROUNDS:    2
+EXP_ID:          24_bdd100kO_fedawa_4C_2R_202510281651
+RUN_NUM:         24
+SERVER_ALG:      fedawa
+DETECTED_GPUS:   2
+BATCH_SIZE:      32
+EPOCHS:          10
+VALIDATION:      true
+DRY_RUN:         true
+==================================================
+######################################################################
+##  Initializing Experiment Directories
+##  Experiment ID: 24_bdd100kO_fedawa_4C_2R_202510281651
+######################################################################
+##  STARTING STANDALONE FEDERATED LEARNING EXPERIMENT 
+##  Experiment Directory: /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651
+##  Environment: /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/env.sh
+
+--- STEP 1: Starting Federated Learning Rounds... ---
+
+==================[ ROUND 1 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+[EXECUTING] Sequential client training for round 1:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651
+>>   Run Name:        r1_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651 --name r1_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 1 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651
+>>   Run Name:        r1_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651 --name r1_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 1 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651
+>>   Run Name:        r1_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651 --name r1_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 1 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651
+>>   Run Name:        r1_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651 --name r1_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 1 complete.
+
+--> All client training for round 1 completed successfully.
+[EXECUTING] Federated aggregation for round 1:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt" \
+    --expected-clients "4" \
+    --round "1" \
+    --algorithm "fedawa"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 1 complete.
+
+==================[ ROUND 2 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+[EXECUTING] Sequential client training for round 2:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651
+>>   Run Name:        r2_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651 --name r2_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 2 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651
+>>   Run Name:        r2_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651 --name r2_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 2 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651
+>>   Run Name:        r2_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651 --name r2_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 2 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651
+>>   Run Name:        r2_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kO_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651 --name r2_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 2 complete.
+
+--> All client training for round 2 completed successfully.
+[EXECUTING] Federated aggregation for round 2:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/client_outputs/24_bdd100kO_fedawa_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r2.pt" \
+    --expected-clients "4" \
+    --round "2" \
+    --algorithm "fedawa"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 2 complete.
+
+######################################################################
+##
+##  STANDALONE FEDERATED LEARNING EXPERIMENT COMPLETED
+##  Final model: /home/waue0920/fl_yolo_slurm/experiments/24_bdd100kO_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r2.pt
+##
+######################################################################
+
+--- STEP 2: Model Validation ---
+[DRY-RUN] Would execute validation
+==========================================
+        DRY RUN MODE ENABLED
+==========================================
+No actual training or aggregation will be performed.
+Commands will be displayed for review only.
+==========================================
+
+Auto-detected WROOT: /home/waue0920/fl_yolo_slurm
+Import /home/waue0920/fl_yolo_slurm/src/env.sh
+Overriding SERVER_ALG from env.sh with CLI value: fedavg
+Overriding DATASET_NAME from env.sh with CLI value: bdd100kOA010
+GPU Check: 2 GPU(s) detected - OK
+========== Environment Configuration ==========
+WROOT:           /home/waue0920/fl_yolo_slurm
+DATASET_NAME:    bdd100kOA010
+CLIENT_NUM:      4
+TOTAL_ROUNDS:    2
+EXP_ID:          26_bdd100kOA010_fedavg_4C_2R_202510281651
+RUN_NUM:         26
+SERVER_ALG:      fedavg
+DETECTED_GPUS:   2
+BATCH_SIZE:      32
+EPOCHS:          10
+VALIDATION:      true
+DRY_RUN:         true
+==================================================
+######################################################################
+##  Initializing Experiment Directories
+##  Experiment ID: 26_bdd100kOA010_fedavg_4C_2R_202510281651
+######################################################################
+##  STARTING STANDALONE FEDERATED LEARNING EXPERIMENT 
+##  Experiment Directory: /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651
+##  Environment: /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/env.sh
+
+--- STEP 1: Starting Federated Learning Rounds... ---
+
+==================[ ROUND 1 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+[EXECUTING] Sequential client training for round 1:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651
+>>   Run Name:        r1_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651 --name r1_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 1 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651
+>>   Run Name:        r1_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651 --name r1_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 1 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651
+>>   Run Name:        r1_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651 --name r1_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 1 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651
+>>   Run Name:        r1_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651 --name r1_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 1 complete.
+
+--> All client training for round 1 completed successfully.
+[EXECUTING] Federated aggregation for round 1:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt" \
+    --expected-clients "4" \
+    --round "1" \
+    --algorithm "fedavg"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 1 complete.
+
+==================[ ROUND 2 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+[EXECUTING] Sequential client training for round 2:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651
+>>   Run Name:        r2_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651 --name r2_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 2 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651
+>>   Run Name:        r2_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651 --name r2_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 2 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651
+>>   Run Name:        r2_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651 --name r2_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 2 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651
+>>   Run Name:        r2_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651 --name r2_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 2 complete.
+
+--> All client training for round 2 completed successfully.
+[EXECUTING] Federated aggregation for round 2:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/client_outputs/26_bdd100kOA010_fedavg_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r2.pt" \
+    --expected-clients "4" \
+    --round "2" \
+    --algorithm "fedavg"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 2 complete.
+
+######################################################################
+##
+##  STANDALONE FEDERATED LEARNING EXPERIMENT COMPLETED
+##  Final model: /home/waue0920/fl_yolo_slurm/experiments/26_bdd100kOA010_fedavg_4C_2R_202510281651/aggregated_weights/w_s_r2.pt
+##
+######################################################################
+
+--- STEP 2: Model Validation ---
+[DRY-RUN] Would execute validation
+==========================================
+        DRY RUN MODE ENABLED
+==========================================
+No actual training or aggregation will be performed.
+Commands will be displayed for review only.
+==========================================
+
+Auto-detected WROOT: /home/waue0920/fl_yolo_slurm
+Import /home/waue0920/fl_yolo_slurm/src/env.sh
+Overriding SERVER_ALG from env.sh with CLI value: fedavgm
+Overriding DATASET_NAME from env.sh with CLI value: bdd100kOA010
+GPU Check: 2 GPU(s) detected - OK
+========== Environment Configuration ==========
+WROOT:           /home/waue0920/fl_yolo_slurm
+DATASET_NAME:    bdd100kOA010
+CLIENT_NUM:      4
+TOTAL_ROUNDS:    2
+EXP_ID:          28_bdd100kOA010_fedavgm_4C_2R_202510281651
+RUN_NUM:         28
+SERVER_ALG:      fedavgm
+DETECTED_GPUS:   2
+BATCH_SIZE:      32
+EPOCHS:          10
+VALIDATION:      true
+DRY_RUN:         true
+==================================================
+######################################################################
+##  Initializing Experiment Directories
+##  Experiment ID: 28_bdd100kOA010_fedavgm_4C_2R_202510281651
+######################################################################
+##  STARTING STANDALONE FEDERATED LEARNING EXPERIMENT 
+##  Experiment Directory: /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651
+##  Environment: /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/env.sh
+
+--- STEP 1: Starting Federated Learning Rounds... ---
+
+==================[ ROUND 1 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+[EXECUTING] Sequential client training for round 1:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651
+>>   Run Name:        r1_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651 --name r1_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 1 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651
+>>   Run Name:        r1_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651 --name r1_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 1 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651
+>>   Run Name:        r1_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651 --name r1_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 1 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651
+>>   Run Name:        r1_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651 --name r1_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 1 complete.
+
+--> All client training for round 1 completed successfully.
+[EXECUTING] Federated aggregation for round 1:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt" \
+    --expected-clients "4" \
+    --round "1" \
+    --algorithm "fedavgm"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 1 complete.
+
+==================[ ROUND 2 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+[EXECUTING] Sequential client training for round 2:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651
+>>   Run Name:        r2_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651 --name r2_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 2 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651
+>>   Run Name:        r2_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651 --name r2_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 2 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651
+>>   Run Name:        r2_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651 --name r2_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 2 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651
+>>   Run Name:        r2_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651 --name r2_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 2 complete.
+
+--> All client training for round 2 completed successfully.
+[EXECUTING] Federated aggregation for round 2:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/client_outputs/28_bdd100kOA010_fedavgm_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r2.pt" \
+    --expected-clients "4" \
+    --round "2" \
+    --algorithm "fedavgm"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 2 complete.
+
+######################################################################
+##
+##  STANDALONE FEDERATED LEARNING EXPERIMENT COMPLETED
+##  Final model: /home/waue0920/fl_yolo_slurm/experiments/28_bdd100kOA010_fedavgm_4C_2R_202510281651/aggregated_weights/w_s_r2.pt
+##
+######################################################################
+
+--- STEP 2: Model Validation ---
+[DRY-RUN] Would execute validation
+==========================================
+        DRY RUN MODE ENABLED
+==========================================
+No actual training or aggregation will be performed.
+Commands will be displayed for review only.
+==========================================
+
+Auto-detected WROOT: /home/waue0920/fl_yolo_slurm
+Import /home/waue0920/fl_yolo_slurm/src/env.sh
+Overriding SERVER_ALG from env.sh with CLI value: fedawa
+Overriding DATASET_NAME from env.sh with CLI value: bdd100kOA010
+GPU Check: 2 GPU(s) detected - OK
+========== Environment Configuration ==========
+WROOT:           /home/waue0920/fl_yolo_slurm
+DATASET_NAME:    bdd100kOA010
+CLIENT_NUM:      4
+TOTAL_ROUNDS:    2
+EXP_ID:          30_bdd100kOA010_fedawa_4C_2R_202510281651
+RUN_NUM:         30
+SERVER_ALG:      fedawa
+DETECTED_GPUS:   2
+BATCH_SIZE:      32
+EPOCHS:          10
+VALIDATION:      true
+DRY_RUN:         true
+==================================================
+######################################################################
+##  Initializing Experiment Directories
+##  Experiment ID: 30_bdd100kOA010_fedawa_4C_2R_202510281651
+######################################################################
+##  STARTING STANDALONE FEDERATED LEARNING EXPERIMENT 
+##  Experiment Directory: /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651
+##  Environment: /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/env.sh
+
+--- STEP 1: Starting Federated Learning Rounds... ---
+
+==================[ ROUND 1 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+[EXECUTING] Sequential client training for round 1:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651
+>>   Run Name:        r1_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651 --name r1_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 1 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651
+>>   Run Name:        r1_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651 --name r1_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 1 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651
+>>   Run Name:        r1_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651 --name r1_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 1 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/yolov9-c.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651
+>>   Run Name:        r1_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/yolov9-c.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651 --name r1_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 1 complete.
+
+--> All client training for round 1 completed successfully.
+[EXECUTING] Federated aggregation for round 1:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt" \
+    --expected-clients "4" \
+    --round "1" \
+    --algorithm "fedawa"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 1 complete.
+
+==================[ ROUND 2 / 2 ]==================
+Using weights for this round: /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+[EXECUTING] Sequential client training for round 2:
+
+--- Training Client 1/4 ---
+>> Client 1 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651
+>>   Run Name:        r2_c1
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c1.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651 --name r2_c1 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 1 training for Round 2 complete.
+
+--- Training Client 2/4 ---
+>> Client 2 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651
+>>   Run Name:        r2_c2
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c2.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651 --name r2_c2 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 2 training for Round 2 complete.
+
+--- Training Client 3/4 ---
+>> Client 3 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651
+>>   Run Name:        r2_c3
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c3.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651 --name r2_c3 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 3 training for Round 2 complete.
+
+--- Training Client 4/4 ---
+>> Client 4 Configuration:
+>>   Data YAML:       /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml
+>>   Input Weights:   /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt
+>>   Project:         /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651
+>>   Run Name:        r2_c4
+>>   GPUs:            2
+>>   Device List:     0,1
+>>   Master Port:     59527
+!! [standalone_orchestrate] Direct FL training execution @ Conda Environment !!
+
+[DRY-RUN] Would execute training command:
+----------------------------------------
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 --master_addr=localhost --master_port=59527 ./train_dual.py --weights /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r1.pt --data /home/waue0920/fl_yolo_slurm/federated_data/bdd100kOA010_4/c4.yaml --cfg /home/waue0920/fl_yolo_slurm/yolov9/models/detect/yolov9-c.yaml --project /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651 --name r2_c4 --device 0\,1 --exist-ok --epochs 10 --batch-size 32 --img 640 --workers 8 --hyp /home/waue0920/fl_yolo_slurm/yolov9/data/hyps/hyp.scratch-high.yaml --close-mosaic 15 
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Client 4 training for Round 2 complete.
+
+--> All client training for round 2 completed successfully.
+[EXECUTING] Federated aggregation for round 2:
+
+[DRY-RUN] Would execute aggregation command:
+----------------------------------------
+python3 /home/waue0920/fl_yolo_slurm/src/server_fedagg.py \
+    --input-dir "/home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/client_outputs/30_bdd100kOA010_fedawa_4C_2R_202510281651" \
+    --output-file "/home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r2.pt" \
+    --expected-clients "4" \
+    --round "2" \
+    --algorithm "fedawa"
+----------------------------------------
+[DRY-RUN] Skipping actual execution
+--> Federated Aggregate for Round 2 complete.
+
+######################################################################
+##
+##  STANDALONE FEDERATED LEARNING EXPERIMENT COMPLETED
+##  Final model: /home/waue0920/fl_yolo_slurm/experiments/30_bdd100kOA010_fedawa_4C_2R_202510281651/aggregated_weights/w_s_r2.pt
+##
+######################################################################
+
+--- STEP 2: Model Validation ---
+[DRY-RUN] Would execute validation

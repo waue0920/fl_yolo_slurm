@@ -5,6 +5,7 @@
 /wandb/
 /archive/
 /yolov9/wandb/
+/yolov9/runs/
 yolov9-*.pt
 yolo9t2*.sif
 

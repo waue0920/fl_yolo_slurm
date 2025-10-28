@@ -19,11 +19,34 @@ set -o pipefail
 
 VALIDATION_ENABLED=true
 DRY_RUN=false
+# Preserve any externally-exported overrides (e.g. from wrapper) instead of
+# unconditionally overwriting them. If not set, default to empty string.
+SERVER_ALG_CLI="${SERVER_ALG_CLI:-}"
+DATASET_NAME_CLI="${DATASET_NAME_CLI:-}"
 
-for arg in "$@"; do
-    if [[ "$arg" == "--dry-run" ]]; then
-        DRY_RUN=true
-    fi
+# Simple argument parsing. Supports:
+#   --dry-run
+#   --server-alg <algorithm>
+#   --dataset <name>
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        --server-alg)
+            SERVER_ALG_CLI="$2"
+            shift 2
+            ;;
+        --dataset)
+            DATASET_NAME_CLI="$2"
+            shift 2
+            ;;
+        *)
+            # ignore unknown args for forward compatibility
+            shift
+            ;;
+    esac
 done
 
 # Print dry-run banner if enabled
@@ -48,6 +71,17 @@ echo "Auto-detected WROOT: ${WROOT}"
 # Source environment settings - all parameters come from here
 echo "Import ${WROOT}/src/env.sh"
 source "${WROOT}/src/env.sh"
+
+# If a command-line/server wrapper provided overrides, prefer them over env.sh
+if [ -n "${SERVER_ALG_CLI}" ]; then
+    echo "Overriding SERVER_ALG from env.sh with CLI value: ${SERVER_ALG_CLI}"
+    export SERVER_ALG="${SERVER_ALG_CLI}"
+fi
+
+if [ -n "${DATASET_NAME_CLI}" ]; then
+    echo "Overriding DATASET_NAME from env.sh with CLI value: ${DATASET_NAME_CLI}"
+    export DATASET_NAME="${DATASET_NAME_CLI}"
+fi
 
 # Validate required parameters from env.sh
 if [ -z "${DATASET_NAME}" ] || [ -z "${CLIENT_NUM}" ] || [ -z "${TOTAL_ROUNDS}" ]; then
@@ -81,7 +115,7 @@ else
     RUN_NUM=1
 fi
 
-export EXP_ID="${RUN_NUM}_${DATASET_NAME}_${CLIENT_NUM}C_${TOTAL_ROUNDS}R_${TIMESTAMP}"
+export EXP_ID="${RUN_NUM}_${DATASET_NAME}_${SERVER_ALG}_${CLIENT_NUM}C_${TOTAL_ROUNDS}R_${TIMESTAMP}"
 
 # Record environment configuration
 echo "========== Environment Configuration =========="

@@ -6,7 +6,7 @@ export WROOT="/home/waue0920/fl_yolo_slurm"
 export EXPERIMENTS_BASE_DIR="${WROOT}/experiments"
 
 ## Dataset
-export DATASET_NAME="bdd100k" #bdd100k, kittiO, kitti, sim10k, foggy, cityscapes | kittiOA010 ...
+export DATASET_NAME="${DATASET_NAME:-kittiO}" #bdd100k, kittiO, kitti, sim10k, foggy, cityscapes | kittiOA010 ...
 export CLIENT_NUM=4   # Client 端數量
 # 以上在  $WROOT/federated_data/ 內要有 ${DATASET_NAME}_${CLIENT_NUM} 的資料夾
 
@@ -24,13 +24,13 @@ export SLURM_ACCOUNT="GOV113119" #
 ## FL client 端的 slurm 參數
 #####################
 ## FL
-export TOTAL_ROUNDS=6  # FL Rounds
-export EPOCHS=20
+export TOTAL_ROUNDS=5  # FL Rounds
+export EPOCHS=10
 ## yolo
 export BATCH_SIZE=32   # 需要是 gpu 數量的n數: 一般 GPUsx8 高 GPUsx16 
 export WORKER=8   # cpu = gpu x 4
 export IMG_SIZE=640
-export HYP="${WROOT}/yolov9/data/hyps/hyp.scratch-high.yaml" # hyp.scratch-cap.yaml or hyp.scratch-cap-e.yaml
+export HYP="${WROOT}/yolov9/data/hyps/hyp.scratch-high.yaml" # hyp.scratch-high.yaml or hyp.fedyoga.yaml
 export MODEL_CFG="${WROOT}/yolov9/models/detect/yolov9-c.yaml" # 
 # 動態參數形式，方便引用和覆蓋
 export TRAIN_EXTRA_ARGS="--epochs ${EPOCHS} --batch-size ${BATCH_SIZE} --img ${IMG_SIZE} --workers ${WORKER} --hyp ${HYP} --close-mosaic 15"
@@ -43,7 +43,7 @@ export CLIENT_CPUS=8   # cpu = gpu x 4
 #####################
 ## FL Server 端的參數
 #####################
-export SERVER_ALG="fedawa"   # 支持 fedavg, fedprox, fedavgm, fedopt, fedyoga, fedawa, fednova
+export SERVER_ALG="${SERVER_ALG:-fedawa}"   # 支持 fedavg, fedprox, fedavgm, fedopt, fedyoga, fedawa, fednova
 
 # FedProx 演算法超參數（Server端命名
 export SERVER_FEDPROX_MU=0.01  # FedProx 的 proximal term 係數

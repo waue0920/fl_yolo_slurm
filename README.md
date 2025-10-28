@@ -124,7 +124,13 @@ sbatch src/run.sb
 
 ```bash
 # 指定實驗目錄，自動檢測已完成的輪次並繼續
-./src/replay.sh experiments/18_kitti_4C_6R_202510010849
+### Replay a Failed Experiment
+
+If an experiment fails mid-execution, you can resume it using the replay script:
+
+```bash
+./src/replay.sh experiments/18_kitti_fedavg_4C_6R_202510010849
+```
 ```
 
 **功能特點**：

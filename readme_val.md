@@ -44,9 +44,11 @@ python3 src/validate_federated_model.py \
 ### 範例
 ```bash
 # 驗證指定實驗中的所有模型 (基線 + 所有輪次)
+```bash
 python3 src/validate_federated_model.py \
-    --experiment-dir experiments/9_kitti_4C_2R_202508051443 \
+    --experiment-dir experiments/9_kitti_fedavg_4C_2R_202508051443 \
     --data-config data/kitti.yaml
+```
 ```
 
 ### 自訂選項
@@ -54,7 +56,7 @@ python3 src/validate_federated_model.py \
 ```bash
 # 使用自訂的基線模型和輸出目錄進行驗證
 python3 src/validate_federated_model.py \
-    --experiment-dir experiments/9_kitti_4C_2R_202508051443 \
+    --experiment-dir experiments/9_kitti_fedavg_4C_2R_202508051443 \
     --data-config data/cityscapes.yaml \
     --baseline-model /path/to/your/custom_baseline.pt \
     --output-dir /path/to/your/custom_validation_results

@@ -470,7 +470,7 @@ def main():
     parser = argparse.ArgumentParser(description="Validate federated learning models")
     parser.add_argument("--device", type=str, default="0", help="cuda device e.g. '0' or '0,1' or 'cpu'")
     parser.add_argument("--experiment-dir", type=Path, required=True,
-                        help="Path to experiment directory (e.g., experiments/9_kitti_4C_2R_*)")
+                        help="Path to experiment directory (e.g., experiments/9_kitti_fedavg_4C_2R_*)")
     parser.add_argument("--data-config", type=Path, default="data/kitti.yaml",
                         help="Path to dataset configuration file")
     parser.add_argument("--output-dir", type=Path, default=None,
