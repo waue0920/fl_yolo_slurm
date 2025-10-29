@@ -258,6 +258,10 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
     if algorithm == 'fedopt':
         # FedOpt 返回 (aggregated_weights, optimizer_state)
         aggregated, optimizer_state = agg_fn(all_state_dicts, **agg_kwargs)
+        # 保存 optimizer_state 供下一轮使用
+        opt_state_path = input_dir / f"fedopt_state.pt"
+        torch.save(optimizer_state, opt_state_path)
+        print(f"[INFO] Saved FedOpt optimizer state to: {opt_state_path}")
     elif algorithm == 'fedavgm':
         # FedAvgM 返回 (aggregated_weights, server_momentum)
         aggregated, server_momentum = agg_fn(all_state_dicts, **agg_kwargs)
@@ -268,6 +272,13 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
         t_weights_path = input_dir / f"fedawa_state.pt"
         torch.save(T_weights_state, t_weights_path)
         print(f"[INFO] Saved FedAWA T_weights state to: {t_weights_path}")
+    elif algorithm == 'fedyoga':
+        # FedYOGA 返回 (aggregated_weights, T_weights_state)
+        aggregated, T_weights_state = agg_fn(all_state_dicts, **agg_kwargs)
+        # 保存 T_weights_state 供下一轮使用
+        t_weights_path = input_dir / f"fedyoga_state.pt"
+        torch.save(T_weights_state, t_weights_path)
+        print(f"[INFO] Saved FedYOGA T_weights state to: {t_weights_path}")
     else:
         # 其他演算法返回 aggregated_weights dict
         aggregated = agg_fn(all_state_dicts, **agg_kwargs)
@@ -376,5 +387,19 @@ if __name__ == "__main__":
                     print(f"[WARN] Failed to load FedAWA T_weights state: {e}, using fresh state")
             else:
                 print(f"[INFO] FedAWA T_weights state not found at: {t_weights_path}, using fresh state")
+    
+    if args.algorithm == 'fedyoga':
+        agg_kwargs['global_weights'] = template_model.state_dict()
+        # 载入前一轮的 T_weights 状态 (若存在)
+        if args.round > 1:
+            t_weights_path = args.input_dir / f"fedyoga_state.pt"
+            if t_weights_path.exists():
+                try:
+                    agg_kwargs['T_weights_state'] = torch.load(t_weights_path, map_location='cpu')
+                    print(f"[INFO] Loaded previous FedYOGA T_weights state from: {t_weights_path}")
+                except Exception as e:
+                    print(f"[WARN] Failed to load FedYOGA T_weights state: {e}, using fresh state")
+            else:
+                print(f"[INFO] FedYOGA T_weights state not found at: {t_weights_path}, using fresh state")
     
     federated_aggregate(args.input_dir, args.output_file, args.expected_clients, args.round, args.algorithm, **agg_kwargs)

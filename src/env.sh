@@ -31,6 +31,7 @@ export BATCH_SIZE=32   # 需要是 gpu 數量的n數: 一般 GPUsx8 高 GPUsx16
 export WORKER=8   # cpu = gpu x 4
 export IMG_SIZE=640
 export HYP="${WROOT}/yolov9/data/hyps/hyp.scratch-high.yaml" # hyp.scratch-high.yaml or hyp.fedyoga.yaml
+export FedyogaHYP="${WROOT}/yolov9/data/hyps/hyp.fedyoga.yaml"
 export MODEL_CFG="${WROOT}/yolov9/models/detect/yolov9-c.yaml" # 
 # 動態參數形式，方便引用和覆蓋
 export TRAIN_EXTRA_ARGS="--epochs ${EPOCHS} --batch-size ${BATCH_SIZE} --img ${IMG_SIZE} --workers ${WORKER} --hyp ${HYP} --close-mosaic 15"
@@ -56,22 +57,14 @@ export SERVER_FEDAWA_SERVER_OPTIMIZER="adam"  # 優化器: adam 或 sgd
 export SERVER_FEDAWA_SERVER_LR=0.001  # Server端學習率 (adam:0.001, sgd:0.01，代碼會自動選擇)
 export SERVER_FEDAWA_GAMMA=1.0  # 聚合權重縮放系數
 export SERVER_FEDAWA_REG_DISTANCE="cos"  # 距離度量: cos (余弦) 或 euc (歐氏)
-# 注意: T_weights 初始化策略
-#   - 原論文: 第一輪基於客戶端數據量 [n1/N, n2/N, ..., nK/N]
-#   - 本實作: 第一輪均勻初始化 [1/K, 1/K, ..., 1/K] (簡化版)
-#   - 後續輪次會自動從 fedawa_state.pt 加載並持續優化
-# FedYOGA 演算法超參數（Server端命名，自創算法）
-export SERVER_FEDYOGA_HISTORY_WINDOW=3  # 降低歷史窗口避免過度累積
-export SERVER_FEDYOGA_PCA_DIM=2  # 修正：應該遠小於客戶端數量，避免過擬合
-export SERVER_FEDYOGA_SOFTMAX_TEMPERATURE=0.5
-export SERVER_FEDYOGA_LOSSDROP_WEIGHT=1.0
-export SERVER_FEDYOGA_GRADVAR_WEIGHT=1.0
-export SERVER_FEDYOGA_PCA_SOLVER="full"
-export SERVER_FEDYOGA_NORM_EPS=1e-8
-# 修正：分階段裁剪策略
-export SERVER_FEDYOGA_CLIP_THRESHOLD_PRE=1000.0  # PCA前粗略保護：避免極端值破壞PCA
-export SERVER_FEDYOGA_CLIP_THRESHOLD_POST=10.0   # PCA後精細裁剪：保護降維後的特徵空間
-export SERVER_FEDYOGA_ENABLE_BALANCE_WEIGHT=false  # IID 場景下關閉平衡權重
+
+# FedYOGA 演算法超參數
+export SERVER_FEDYOGA_SERVER_EPOCHS=1  # 優化 T_weights 的輪數
+export SERVER_FEDYOGA_SERVER_LR=0.001  # Server端學習率
+export SERVER_FEDYOGA_GAMMA=1.0  # 聚合權重縮放系數
+export SERVER_FEDYOGA_LAYER_GROUP_SIZE=1  # 每組包含幾層 (1=逐層, >1=分組)
+
+
 # FedOpt 演算法超參數（Server端命名）
 export SERVER_FEDOPT_LR=0.001
 export SERVER_FEDOPT_BETA1=0.9

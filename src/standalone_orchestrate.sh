@@ -180,6 +180,19 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
 
     echo "Using weights for this round: ${current_weights}"
 
+    # === Dynamic Hyperparameter Strategy: Switch to FedYOGA HYP from Round 2 ===
+    if [ "${r}" -ge 2 ] && [ -n "${FedyogaHYP}" ] && [ -f "${FedyogaHYP}" ]; then
+        echo "[STRATEGY] Round ${r}: Switching to FedYOGA hyperparameters (${FedyogaHYP})"
+        CURRENT_HYP="${FedyogaHYP}"
+    else
+        echo "[STRATEGY] Round ${r}: Using standard hyperparameters (${HYP})"
+        CURRENT_HYP="${HYP}"
+    fi
+    
+    # Rebuild TRAIN_EXTRA_ARGS with the current hyperparameter file
+    TRAIN_EXTRA_ARGS="--epochs ${EPOCHS} --batch-size ${BATCH_SIZE} --img ${IMG_SIZE} --workers ${WORKER} --hyp ${CURRENT_HYP} --close-mosaic 15"
+    echo "[STRATEGY] Training arguments: ${TRAIN_EXTRA_ARGS}"
+
     # Execute all client jobs for the current round SEQUENTIALLY
     echo "[EXECUTING] Sequential client training for round ${r}:"
     for c in $(seq 1 ${CLIENT_NUM}); do
@@ -319,15 +332,9 @@ echo "######################################################################"
 # Optional validation step
 if [ "$VALIDATION_ENABLED" = true ]; then
     echo -e "\n--- STEP 2: Model Validation ---"
-    if [ -f "${SRC_DIR}/validate_federated_model.py" ]; then
-        if [ "$DRY_RUN" = true ]; then
-            echo "[DRY-RUN] Would execute validation"
-        else
-            python3 "${SRC_DIR}/validate_federated_model.py" \
-                --experiment-dir "${EXP_DIR}" \
-                --data-config "${WROOT}/data/${DATASET_NAME}.yaml" || true
-        fi
+    if [ "$DRY_RUN" = true ]; then
+        echo "[DRY-RUN] Would execute validation using validate_models.sh"
     else
-        echo "Validation script not found, skipping..."
+        bash "${SRC_DIR}/validate_models.sh" "${EXP_DIR}"
     fi
 fi

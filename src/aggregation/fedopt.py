@@ -41,18 +41,19 @@ def aggregate(client_weights, **kwargs):
         return global_weights, optimizer_state
     
     num_clients = len(client_weights)
-    # 1. 計算每個 client 的 delta
-    delta_list = []
-    for wi in client_weights:
-        delta = OrderedDict()
-        for k in global_weights.keys():
-            delta[k] = wi[k] - global_weights[k]
-        delta_list.append(delta)
-    # 2. 平均 delta
-    avg_delta = OrderedDict()
+    
+    # 1. 先計算 client 權重的平均（標準 FedAvg）
+    avg_client_weights = OrderedDict()
     for k in global_weights.keys():
         # 將計算強制轉為 float32 避免 'Half' 錯誤
-        avg_delta[k] = (sum([delta[k].float() for delta in delta_list]) / num_clients)
+        stacked = torch.stack([cw[k].float() for cw in client_weights], dim=0)
+        avg_client_weights[k] = torch.mean(stacked, dim=0)
+    
+    # 2. 計算 delta (pseudo-gradient)
+    # delta = avg_client_weights - global_weights
+    avg_delta = OrderedDict()
+    for k in global_weights.keys():
+        avg_delta[k] = avg_client_weights[k] - global_weights[k].float()
     
     # 檢查 avg_delta 是否有異常
     nan_keys = []
@@ -68,9 +69,9 @@ def aggregate(client_weights, **kwargs):
     # 3. 初始化或使用現有的 optimizer_state
     if optimizer_state is None:
         print(f"[DEBUG] Creating new optimizer state")
-        # 創建新的 momentum 和 variance 字典
-        m = OrderedDict({k: torch.zeros_like(v) for k, v in global_weights.items()})
-        v = OrderedDict({k: torch.zeros_like(v) for k, v in global_weights.items()})
+        # 創建新的 momentum 和 variance 字典 (使用 FP32 避免精度問題)
+        m = OrderedDict({k: torch.zeros_like(v, dtype=torch.float32) for k, v in global_weights.items()})
+        v = OrderedDict({k: torch.zeros_like(v, dtype=torch.float32) for k, v in global_weights.items()})
         # 創建 optimizer_state 字典來保存狀態
         optimizer_state = {
             'm': m,
@@ -93,23 +94,24 @@ def aggregate(client_weights, **kwargs):
                 print(f"  - {k}: m({m_stats}), v({v_stats})")
 
     # 4. FedAdam 公式
+    # 更新全局權重：w_t+1 = w_t + Δw
+    # 其中 Δw 是基於 Adam 優化的更新量
     for k in global_weights.keys():
-        # 確保 m, v, global_weights 都是 float32 來計算
-        m_k_float = m[k].float()
-        v_k_float = v[k].float()
-        
-        # 更新動量和變異數
-        m[k] = (beta1 * m_k_float + (1 - beta1) * avg_delta[k]).to(m[k].dtype)
-        v[k] = (beta2 * v_k_float + (1 - beta2) * (avg_delta[k] ** 2)).to(v[k].dtype)
+        # m 和 v 使用 FP32 精度進行計算和存儲
+        # 更新一階動量（momentum）和二階動量（variance）
+        m[k] = beta1 * m[k] + (1 - beta1) * avg_delta[k]  # 保持 FP32
+        v[k] = beta2 * v[k] + (1 - beta2) * (avg_delta[k] ** 2)  # 保持 FP32
 
-        # 使用 float32 進行權重更新計算
+        # FedAdam 更新：使用 Adam 優化器的更新規則
+        # global_weights = global_weights + lr * m / (√v + ε)
+        # 注意：這裡是加法，因為 m 已經包含了更新方向（avg_delta）
         global_weights_k_float = global_weights[k].float()
-        update = global_weights_k_float - lr * m[k].float() / (torch.sqrt(v[k].float()) + eps)
+        update = global_weights_k_float + lr * m[k] / (torch.sqrt(v[k]) + eps)
         
         # 將結果轉回原始 dtype
         global_weights[k] = update.to(global_weights[k].dtype)
     
-    # 更新 optimizer_state 中的 m 和 v
+    # 更新 optimizer_state 中的 m 和 v (已經是 FP32，無需轉換)
     optimizer_state['m'] = m
     optimizer_state['v'] = v
     

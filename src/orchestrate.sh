@@ -116,6 +116,19 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
     fi
     echo "Using weights for this round: ${current_weights}"
 
+        # === Dynamic Hyperparameter Strategy: Switch to FedYOGA HYP from Round 2 ===
+        if [ "${r}" -ge 2 ] && [ -n "${FedyogaHYP}" ] && [ -f "${FedyogaHYP}" ]; then
+            echo "[STRATEGY] Round ${r}: Switching to FedYOGA hyperparameters (${FedyogaHYP})"
+            CURRENT_HYP="${FedyogaHYP}"
+        else
+            echo "[STRATEGY] Round ${r}: Using standard hyperparameters (${HYP})"
+            CURRENT_HYP="${HYP}"
+        fi
+    
+        # Rebuild TRAIN_EXTRA_ARGS with the current hyperparameter file
+        export TRAIN_EXTRA_ARGS="--epochs ${EPOCHS} --batch-size ${BATCH_SIZE} --img ${IMG_SIZE} --workers ${WORKER} --hyp ${CURRENT_HYP} --close-mosaic 15"
+        echo "[STRATEGY] Training arguments: ${TRAIN_EXTRA_ARGS}"
+
     # Submit all client jobs for the current round in parallel
     # The fl_client.sh script returns a list of submitted job IDs
     output=$("${SRC_DIR}/fl_client_train.sh" \

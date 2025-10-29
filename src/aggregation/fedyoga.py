@@ -1,310 +1,267 @@
-from sklearn.decomposition import PCA
+"""
+FedYOGA aggregation algorithm implementation for server-side federated learning.
+
+This module provides:
+- cosine_distance_matrix: compute pairwise cosine distance
+- aggregate: perform FedYOGA aggregation with learnable layer-wise client weights
+
+Note: FedYOGA uses fixed optimizer='adam' and distance='cos' (not configurable)
+"""
+
 import torch
-from collections import OrderedDict, deque
+import torch.nn as nn
+import torch.optim as optim
+from collections import OrderedDict
 import numpy as np
 import os
 
-def get_loss_drop(results):
-    """
-    計算 LossDrop，results 為 list of dict 或 numpy array，需包含 val_loss 欄位。
-    例如 results = [{'val/box_loss': ...}, ...] 或 results = np.array([...])
-    """
-    if results is None or len(results) < 2:
-        return 0.0
-    # 假設 val/box_loss 欄位
-    if isinstance(results, list):
-        # 取最後兩個 epoch 的 val/box_loss
-        losses = [r.get('val/box_loss', None) for r in results if 'val/box_loss' in r]
-    elif isinstance(results, np.ndarray):
-        # 假設第一欄是 val/box_loss
-        losses = results[:, 0]
-    else:
-        return 0.0
-    if len(losses) < 2 or losses[-2] is None or losses[-1] is None:
-        return 0.0
-    return float(losses[-2] - losses[-1])
 
-def get_grad_var(weights_history):
+def cosine_distance_matrix(x, y):
     """
-    計算 GradVariance，weights_history 為 list of OrderedDict，每個為一輪的 weights。
-    """
-    if weights_history is None or len(weights_history) < 2:
-        return 0.0
-    # 計算 weight delta
-    deltas = []
-    for i in range(1, len(weights_history)):
-        delta = []
-        for k in weights_history[i].keys():
-            # 轉為 float32 進行計算，避免 numpy 處理 float16 的問題
-            diff = (weights_history[i][k] - weights_history[i-1][k]).float().cpu().numpy().flatten()
-            delta.append(diff)
-        delta = np.concatenate(delta)
-        deltas.append(delta)
-    deltas = np.stack(deltas)
-    # 取所有 delta 的變異數
-    return float(np.var(deltas))
-
-def pca_reduce(X, n_components=8, solver='full'):
-    """
-    X: numpy array, shape [n_samples, n_features]
-    n_components: int, target dimension
-    solver: PCA svd_solver
-    return: numpy array, shape [n_samples, n_components]
-    """
-    pca = PCA(n_components=n_components, svd_solver=solver)
-    X_reduced = pca.fit_transform(X)
-    return X_reduced
-
-def softmax(x, temperature=1.0):
-    x = x / temperature
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum(axis=0)
-
-
-def compute_balanced_client_weights(client_weights, client_data_info=None):
-    """
-    方案 B: 根據客戶端的數據多樣性計算平衡權重
-    
-    目的: 降低過度代表某個類別的客戶端 (如 Client 4 的 91% Rider)
-    
+    Compute cosine distance matrix.
     Args:
-        client_weights: list of OrderedDict，每個客戶端的權重
-        client_data_info: list of dict，每個客戶端的數據統計信息
-                         格式: [{'class_counts': {...}, 'total_samples': ...}, ...]
-    
+        x: Tensor of shape [batch1, dim]
+        y: Tensor of shape [batch2, dim]
     Returns:
-        numpy array, shape [num_clients], 正規化後的權重 (sum=1)
+        Tensor of shape [batch1, batch2] with distances in [0, 2]
     """
-    num_clients = len(client_weights)
-    
-    # 如果沒有提供數據信息，使用均等權重
-    if client_data_info is None or len(client_data_info) == 0:
-        print("[FedYOGA] No client data info provided, using uniform weights")
-        return np.ones(num_clients) / num_clients
-    
-    # 計算每個客戶端的「數據多樣性評分」
-    diversity_scores = np.ones(num_clients)
-    
-    for i, info in enumerate(client_data_info):
-        if info is None or 'class_counts' not in info:
-            continue
-        
-        class_counts = info['class_counts']
-        total_samples = sum(class_counts.values()) if isinstance(class_counts, dict) else 1
-        
-        if total_samples == 0:
-            continue
-        
-        # 找出最主導的類別比例
-        max_class_count = max(class_counts.values()) if isinstance(class_counts, dict) else total_samples
-        max_class_ratio = max_class_count / total_samples
-        
-        # 根據不平衡程度調整權重
-        # 如果某類別 > 90% (極端不平衡): 權重 = 0.25
-        # 如果某類別 > 70% (嚴重不平衡): 權重 = 0.5
-        # 如果某類別 > 50% (不平衡):     權重 = 0.75
-        # 否則 (平衡):                  權重 = 1.0
-        
-        if max_class_ratio > 0.90:
-            diversity_scores[i] = 0.25
-            print(f"[FedYOGA-BalanceWeight] Client {i+1}: Extreme imbalance ({max_class_ratio*100:.1f}%), weight=0.25")
-        elif max_class_ratio > 0.70:
-            diversity_scores[i] = 0.5
-            print(f"[FedYOGA-BalanceWeight] Client {i+1}: Severe imbalance ({max_class_ratio*100:.1f}%), weight=0.5")
-        elif max_class_ratio > 0.50:
-            diversity_scores[i] = 0.75
-            print(f"[FedYOGA-BalanceWeight] Client {i+1}: Imbalance ({max_class_ratio*100:.1f}%), weight=0.75")
-        else:
-            diversity_scores[i] = 1.0
-            print(f"[FedYOGA-BalanceWeight] Client {i+1}: Balanced ({max_class_ratio*100:.1f}%), weight=1.0")
-    
-    # 正規化權重（sum = 1）
-    total_score = np.sum(diversity_scores)
-    balanced_weights = diversity_scores / total_score if total_score > 0 else np.ones(num_clients) / num_clients
-    
-    print(f"[FedYOGA-BalanceWeight] Final weights: {[f'{w:.4f}' for w in balanced_weights]}")
-    print(f"[FedYOGA-BalanceWeight] Weight reduction for Client 4: {(1/num_clients - balanced_weights[3])/(1/num_clients)*100:.1f}%")
-    
-    return balanced_weights
+    x_normalized = x / (torch.norm(x, dim=-1, keepdim=True) + 1e-8)
+    y_normalized = y / (torch.norm(y, dim=-1, keepdim=True) + 1e-8)
+    # cosine similarity
+    cos_sim = torch.matmul(x_normalized, y_normalized.t())
+    # cosine distance = 1 - cosine_similarity
+    return 1 - cos_sim
 
 
-def aggregate(client_weights, client_vectors, global_weights, **kwargs):
-    history_window = int(os.environ.get('SERVER_FEDYOGA_HISTORY_WINDOW', 5))
-    pca_dim = int(os.environ.get('SERVER_FEDYOGA_PCA_DIM', 2))  # 修正：應該遠小於客戶端數量
-    softmax_temperature = float(os.environ.get('SERVER_FEDYOGA_SOFTMAX_TEMPERATURE', 1.0))
-    lossdrop_weight = float(os.environ.get('SERVER_FEDYOGA_LOSSDROP_WEIGHT', 1.0))
-    gradvar_weight = float(os.environ.get('SERVER_FEDYOGA_GRADVAR_WEIGHT', 1.0))
-    pca_solver = os.environ.get('SERVER_FEDYOGA_PCA_SOLVER', 'full')
-    norm_eps = float(os.environ.get('SERVER_FEDYOGA_NORM_EPS', 1e-8))
-    # 修正：裁剪閾值應該在 PCA 後應用，且更寬鬆
-    clip_threshold_pre = float(os.environ.get('SERVER_FEDYOGA_CLIP_THRESHOLD_PRE', 1000.0))  # PCA 前粗略裁剪
-    clip_threshold_post = float(os.environ.get('SERVER_FEDYOGA_CLIP_THRESHOLD_POST', 10.0))  # PCA 後精細裁剪
+def aggregate(client_weights, client_vectors, global_weights, T_weights_state=None, **kwargs):
+    """
+    FedYOGA aggregation algorithm.
+
+    Args:
+        client_weights: list[OrderedDict], client model weights per client
+        client_vectors: list[dict], additional client training history
+        global_weights: OrderedDict, current global model weights
+        T_weights_state: dict | None, state dict carrying T_weights from the previous round
+        **kwargs: extra arguments (ignored)
+
+    Returns:
+        aggregated_weights: OrderedDict, aggregated global weights
+        T_weights_state: dict, updated state containing T_weights for the next round
+
+    Environment variables:
+        - SERVER_FEDYOGA_SERVER_EPOCHS: number of optimization epochs for T_weights (default: 1)
+        - SERVER_FEDYOGA_SERVER_LR: server-side learning rate (default: 0.001)
+        - SERVER_FEDYOGA_GAMMA: scaling factor applied to aggregation weights (default: 1.0)
+        - SERVER_FEDYOGA_LAYER_GROUP_SIZE: group N layers together (default: 1, i.e., per-layer)
+    """
+    
+    # Read hyperparameters
+    server_epochs = int(os.environ.get('SERVER_FEDYOGA_SERVER_EPOCHS', 1))
+    server_optimizer = 'adam'  # Fixed: always use Adam
+    server_lr = float(os.environ.get('SERVER_FEDYOGA_SERVER_LR', 0.001))
+    gamma = float(os.environ.get('SERVER_FEDYOGA_GAMMA', 1.0))
+    layer_group_size = int(os.environ.get('SERVER_FEDYOGA_LAYER_GROUP_SIZE', 1))
     
     num_clients = len(client_weights)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    print(f"[FedYOGA] Aggregating {num_clients} clients with PCA_DIM={pca_dim}")
-    print(f"[FedYOGA] Clipping thresholds: PRE={clip_threshold_pre}, POST={clip_threshold_post}")
+    print(f"[FedYOGA] Aggregating {num_clients} clients (Layer-wise mode)")
+    print(f"[FedYOGA] Server epochs: {server_epochs}, LR: {server_lr}, Gamma: {gamma}")
+    print(f"[FedYOGA] Layer group size: {layer_group_size} (fixed: optimizer=adam, distance=cos)")
     
-    # 1. 計算 Ucli_r = wi - global_weights
-    Ucli_list = []
-    for i, wi in enumerate(client_weights):
-        u = []
-        for k in global_weights.keys():
-            # 轉為 float32 再轉成 numpy，以供 PCA 使用
-            diff = (wi[k] - global_weights[k]).float().cpu().numpy().flatten()
-            u.append(diff)
-        u_concat = np.concatenate(u)
+    # 1) Extract layer-wise weights for each client
+    # Structure: client_layers[client_idx][layer_idx] = tensor
+    layer_keys = sorted(global_weights.keys())
+    num_total_layers = len(layer_keys)
+    
+    # Group layers if needed
+    if layer_group_size > 1:
+        num_groups = (num_total_layers + layer_group_size - 1) // layer_group_size
+        print(f"[FedYOGA] Grouping {num_total_layers} layers into {num_groups} groups")
+    else:
+        num_groups = num_total_layers
+    
+    # Organize client weights by layer/group
+    client_layers = []
+    for i, w in enumerate(client_weights):
+        layers = []
+        for key in layer_keys:
+            layers.append(w[key].float().flatten().to(device))
+        client_layers.append(layers)
+    
+    # Organize global weights by layer/group
+    global_layers = []
+    for key in layer_keys:
+        global_layers.append(global_weights[key].float().flatten().to(device))
+    
+    # 2) Initialize/load T_weights: [num_groups, num_clients]
+    if T_weights_state is not None and 'T_weights' in T_weights_state:
+        T_weights = T_weights_state['T_weights'].clone().detach().to(device)
+        # Validate shape
+        expected_shape = (num_groups, num_clients)
+        if T_weights.shape != expected_shape:
+            print(f"[FedYOGA] WARNING: T_weights shape mismatch {T_weights.shape} vs {expected_shape}, reinitializing")
+            T_weights = torch.ones(num_groups, num_clients, dtype=torch.float32, device=device) / num_clients
+        elif torch.isnan(T_weights).any() or torch.isinf(T_weights).any():
+            print(f"[FedYOGA] WARNING: Loaded T_weights contains NaN/Inf, reinitializing")
+            T_weights = torch.ones(num_groups, num_clients, dtype=torch.float32, device=device) / num_clients
+        T_weights.requires_grad = True
+        print(f"[FedYOGA] Loaded T_weights from previous round, shape: {T_weights.shape}")
+    else:
+        T_weights = torch.ones(num_groups, num_clients, dtype=torch.float32, device=device) / num_clients
+        T_weights.requires_grad = True
+        print(f"[FedYOGA] Initialized T_weights (uniform), shape: {T_weights.shape}")
+    
+    # 3) Set up optimizer
+    if server_optimizer == 'adam':
+        optimizer = optim.Adam([T_weights], lr=server_lr, betas=(0.5, 0.999))
+    elif server_optimizer == 'sgd':
+        optimizer = optim.SGD([T_weights], lr=server_lr, momentum=0.9, weight_decay=5e-4)
+    else:
+        raise ValueError(f"Unknown optimizer: {server_optimizer}")
+    
+    # 4) Optimize T_weights layer-by-layer (or group-by-group)
+    print(f"[FedYOGA] Starting T_weights optimization (layer-wise)...")
+    
+    for epoch in range(server_epochs):
+        optimizer.zero_grad()
         
-        # Check for NaN/Inf in individual client
-        if np.isnan(u_concat).any() or np.isinf(u_concat).any():
-            print(f"[WARNING] Client {i+1}: Found NaN/Inf in weight differences")
-            u_concat = np.nan_to_num(u_concat, nan=0.0, posinf=0.0, neginf=0.0)
+        total_reg_loss = 0.0
+        total_sim_loss = 0.0
         
-        Ucli_list.append(u_concat)
-    
-    Ucli_arr = np.stack(Ucli_list)  # shape: [num_clients, total_params]
-    
-    # Statistics for debugging Non-IID scenarios
-    print(f"[FedYOGA] Weight difference statistics:")
-    print(f"  - Shape: {Ucli_arr.shape}")
-    print(f"  - Mean: {np.mean(Ucli_arr):.6f}, Std: {np.std(Ucli_arr):.6f}")
-    print(f"  - Min: {np.min(Ucli_arr):.6f}, Max: {np.max(Ucli_arr):.6f}")
-    
-    # Handle Inf values first by converting them to NaN so they can be imputed
-    if np.isinf(Ucli_arr).any():
-        inf_count = np.isinf(Ucli_arr).sum()
-        print(f"[WARNING] Detected {inf_count} Inf values in client weight differences! Converting to NaN for imputation.")
-        Ucli_arr = np.where(np.isinf(Ucli_arr), np.nan, Ucli_arr)
-
-    # Column-wise (feature-wise) mean imputation (ignore NaNs when computing the mean)
-    # This is more robust than replacing all NaNs with 0, especially in Non-IID scenarios.
-    col_mean = np.nanmean(Ucli_arr, axis=0)
-    # If a column is all-NaN, nanmean returns NaN for that column: fallback to 0.0
-    nan_cols = np.isnan(col_mean)
-    if nan_cols.any():
-        print(f"[WARNING] Found {nan_cols.sum()} all-NaN feature columns; filling their mean with 0.0")
-        col_mean[nan_cols] = 0.0
-
-    nan_total = np.isnan(Ucli_arr).sum()
-    if nan_total > 0:
-        print(f"[INFO] Imputing {nan_total} NaN entries using column means")
-        # Broadcast column means to rows and replace NaNs
-        Ucli_arr = np.where(np.isnan(Ucli_arr), col_mean[None, :], Ucli_arr)
-
-    # Safety: if any NaN/Inf remain (edge cases), replace them with 0.0
-    if np.isnan(Ucli_arr).any() or np.isinf(Ucli_arr).any():
-        rem_nan = np.isnan(Ucli_arr).sum()
-        rem_inf = np.isinf(Ucli_arr).sum()
-        print(f"[WARNING] After imputation, remaining NaN: {rem_nan}, Inf: {rem_inf}. Replacing them with 0.0")
-        Ucli_arr = np.nan_to_num(Ucli_arr, nan=0.0, posinf=0.0, neginf=0.0)
-
-    # 修正：PCA 前只做寬鬆的極端值保護，避免破壞信號
-    max_abs_val = np.abs(Ucli_arr).max()
-    if max_abs_val > clip_threshold_pre:
-        print(f"[WARNING] Pre-PCA: Extreme values detected (max: {max_abs_val:.2f}), clipping to ±{clip_threshold_pre}")
-        Ucli_arr = np.clip(Ucli_arr, -clip_threshold_pre, clip_threshold_pre)
-    
-    print(f"[FedYOGA] Pre-PCA statistics:")
-    print(f"  - Mean: {np.mean(Ucli_arr):.6f}, Std: {np.std(Ucli_arr):.6f}")
-    print(f"  - Min: {np.min(Ucli_arr):.6f}, Max: {np.max(Ucli_arr):.6f}")
-    
-    # 2. 降維 (PCA) + Normalize
-    # 修正：確保 PCA 維度遠小於客戶端數量，避免過擬合
-    n_components = min(pca_dim, max(1, Ucli_arr.shape[0] - 1), Ucli_arr.shape[1])
-    print(f"[FedYOGA] Performing PCA reduction: {Ucli_arr.shape[1]} → {n_components} dimensions")
-    
-    try:
-        Vcli_arr = pca_reduce(Ucli_arr, n_components=n_components, solver=pca_solver)
+        # Process each layer group
+        for group_idx in range(num_groups):
+            # Determine which layers belong to this group
+            start_layer = group_idx * layer_group_size
+            end_layer = min(start_layer + layer_group_size, num_total_layers)
+            
+            # Concatenate layers in this group
+            # client_group_weights: [num_clients, total_params_in_group]
+            client_group_weights = []
+            for client_idx in range(num_clients):
+                group_params = torch.cat([client_layers[client_idx][layer_idx] 
+                                         for layer_idx in range(start_layer, end_layer)])
+                client_group_weights.append(group_params)
+            client_group_weights = torch.stack(client_group_weights)  # [num_clients, dim]
+            
+            # Global group weights
+            global_group_weights = torch.cat([global_layers[layer_idx] 
+                                             for layer_idx in range(start_layer, end_layer)])
+            
+            # Get T_weights for this group: [num_clients]
+            T_group = T_weights[group_idx]
+            
+            # Softmax normalization
+            probability_train = torch.softmax(T_group, dim=0)
+            
+            # a) Regularization Loss (using cosine distance)
+            C = cosine_distance_matrix(global_group_weights.unsqueeze(0), client_group_weights)
+            
+            C_squeezed = C.squeeze(0)
+            if C_squeezed.dim() == 0:
+                C_squeezed = C_squeezed.unsqueeze(0)
+            reg_loss = torch.sum(probability_train * C_squeezed)
+            
+            # b) Similarity Loss
+            client_grad = client_group_weights - global_group_weights.unsqueeze(0)
+            column_sum = torch.matmul(probability_train.unsqueeze(0), client_grad)
+            l2_distance = torch.norm(client_grad.unsqueeze(0) - column_sum.unsqueeze(1), p=2, dim=2)
+            l2_distance_squeezed = l2_distance.squeeze(0)
+            if l2_distance_squeezed.dim() == 0:
+                l2_distance_squeezed = l2_distance_squeezed.unsqueeze(0)
+            sim_loss = torch.sum(probability_train * l2_distance_squeezed)
+            
+            total_reg_loss += reg_loss
+            total_sim_loss += sim_loss
         
-        # 修正：PCA 後再做精細裁剪，保護降維後的特徵空間
-        pca_max = np.abs(Vcli_arr).max()
-        if pca_max > clip_threshold_post:
-            print(f"[WARNING] Post-PCA: Clipping features from ±{pca_max:.2f} to ±{clip_threshold_post}")
-            Vcli_arr = np.clip(Vcli_arr, -clip_threshold_post, clip_threshold_post)
+        # c) Total loss
+        total_loss = total_reg_loss + total_sim_loss
         
-        print(f"[FedYOGA] Post-PCA statistics:")
-        print(f"  - Mean: {np.mean(Vcli_arr):.6f}, Std: {np.std(Vcli_arr):.6f}")
-        print(f"  - Min: {np.min(Vcli_arr):.6f}, Max: {np.max(Vcli_arr):.6f}")
+        # Numerical stability check
+        if torch.isnan(total_loss) or torch.isinf(total_loss):
+            print(f"[FedYOGA] WARNING: Loss is NaN/Inf at epoch {epoch+1}!")
+            print(f"  - reg_loss: {total_reg_loss.item()}, sim_loss: {total_sim_loss.item()}")
+            torch.nn.utils.clip_grad_norm_([T_weights], max_norm=1.0)
+            if epoch > 0:
+                print(f"[FedYOGA] Early stopping due to numerical instability")
+                break
         
-    except Exception as e:
-        print(f"[ERROR] PCA failed: {e}")
-        print(f"[FALLBACK] Using simple averaging instead of FedYOGA")
-        # Fallback to FedAvg
-        agg_weights = OrderedDict()
-        for k in global_weights.keys():
-            agg_weights[k] = torch.zeros_like(global_weights[k], dtype=torch.float32)
-        for wi in client_weights:
-            for k in agg_weights.keys():
-                agg_weights[k] += wi[k] / num_clients
-        return agg_weights
+        # Backpropagation
+        total_loss.backward()
+        
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_([T_weights], max_norm=10.0)
+        
+        # Check gradients
+        if T_weights.grad is not None and (torch.isnan(T_weights.grad).any() or torch.isinf(T_weights.grad).any()):
+            print(f"[FedYOGA] WARNING: Gradient contains NaN/Inf at epoch {epoch+1}, skipping update")
+            optimizer.zero_grad()
+            continue
+        
+        optimizer.step()
+        
+        if epoch == 0 or (epoch + 1) % max(1, server_epochs // 5) == 0:
+            print(f"[FedYOGA] Epoch {epoch+1}/{server_epochs}: Loss={total_loss.item():.6f} "
+                  f"(Reg={total_reg_loss.item():.6f}, Sim={total_sim_loss.item():.6f})")
     
-    # 正規化：每個客戶端的 PCA 特徵向量
-    Vcli_arr = Vcli_arr / (np.linalg.norm(Vcli_arr, axis=1, keepdims=True) + norm_eps)
-    # 3. 歷史窗口平均 (假設 client_vectors 裡有歷史)
-    Hcli_arr = []
-    for i, vec in enumerate(client_vectors):
-        history = vec.get('history', [])
-        history = history[-history_window:] + [Vcli_arr[i]]
-        h = np.mean(np.stack(history), axis=0)
-        Hcli_arr.append(h)
-        vec['history'] = history
-    # 4. 拼接 LossDrop, GradVariance，並加權
-    ClientVector_arr = []
-    for i, vec in enumerate(client_vectors):
-        loss_drop = get_loss_drop(vec.get('results', None)) if 'results' in vec else vec.get('loss_drop', 0.0)
-        grad_var = get_grad_var(vec.get('weights_history', None)) if 'weights_history' in vec else vec.get('grad_var', 0.0)
-        client_vec = np.concatenate([
-            Hcli_arr[i],
-            [lossdrop_weight * loss_drop],
-            [gradvar_weight * grad_var]
-        ])
-        ClientVector_arr.append(client_vec)
-    ClientVector_arr = np.stack(ClientVector_arr)  # shape: [num_clients, n_components+2]
-    # 5. 計算聚合權重 ai (softmax)
-    scores = np.linalg.norm(ClientVector_arr, axis=1)
-    ai = softmax(scores, temperature=softmax_temperature)
-    
-    # 方案 B: 應用數據平衡加權（可選）
-    enable_balance_weight = os.environ.get('SERVER_FEDYOGA_ENABLE_BALANCE_WEIGHT', 'false').lower() == 'true'
-    if enable_balance_weight:
-        # 從 client_vectors 中提取數據分佈信息
-        client_data_info = []
-        for vec in client_vectors:
-            if 'data_distribution' in vec:
-                client_data_info.append(vec['data_distribution'])
-            else:
-                client_data_info.append(None)
-        
-        # 計算基於數據多樣性的權重
-        balance_weights = compute_balanced_client_weights(client_weights, client_data_info)
-        
-        # 合併 FedYOGA 權重和平衡權重
-        # ai = ai * balance_weights（逐元素乘積）
-        ai = ai * balance_weights
-        ai = ai / np.sum(ai)  # 重新正規化
-        
-        print(f"[FedYOGA] After balance weighting: {[f'{w:.4f}' for w in ai]}")
-    
-    # 6. 聚合 Wglo_r = Σ(Wcli_r × ai)
-    print(f"[FedYOGA] Aggregation weights: {[f'{w:.4f}' for w in ai]}")
+    # 5) Final aggregation using layer-wise weights
+    print(f"[FedYOGA] Computing final aggregation with layer-wise weights...")
     
     agg_weights = OrderedDict()
-    for k in global_weights.keys():
-        agg_weights[k] = torch.zeros_like(global_weights[k], dtype=torch.float32)
-    for wi, a in zip(client_weights, ai):
-        for k in agg_weights.keys():
-            agg_weights[k] += a * wi[k]
     
-    # 修正：聚合後檢查並修復 BatchNorm 參數
+    with torch.no_grad():
+        for group_idx in range(num_groups):
+            # Get final probability for this group
+            T_group = T_weights[group_idx]
+            final_probability = torch.softmax(T_group, dim=0)
+            
+            # Apply gamma scaling
+            scaled_probs = final_probability * gamma
+            total_prob = scaled_probs.sum()
+            if total_prob > 1e-8:
+                scaled_probs = scaled_probs / total_prob
+            else:
+                scaled_probs = torch.ones_like(final_probability) / len(final_probability)
+            
+            # Determine which layers belong to this group
+            start_layer = group_idx * layer_group_size
+            end_layer = min(start_layer + layer_group_size, num_total_layers)
+            
+            # Print weights for first/last/middle groups
+            if group_idx == 0 or group_idx == num_groups - 1 or group_idx == num_groups // 2:
+                print(f"[FedYOGA] Group {group_idx} (layers {start_layer}-{end_layer-1}) weights: "
+                      f"{[f'{w.item():.4f}' for w in scaled_probs]}")
+            
+            # Aggregate each layer in this group
+            for layer_idx in range(start_layer, end_layer):
+                key = layer_keys[layer_idx]
+                agg_weights[key] = torch.zeros_like(global_weights[key], dtype=torch.float32)
+                
+                for client_idx, prob in enumerate(scaled_probs):
+                    agg_weights[key] += prob.item() * client_weights[client_idx][key].to(agg_weights[key].device)
+    
+    # Validate no NaN/Inf in aggregated weights
+    has_nan_inf = False
     for k in agg_weights.keys():
-        if 'running_mean' in k or 'running_var' in k or 'num_batches_tracked' in k:
-            if torch.isnan(agg_weights[k]).any() or torch.isinf(agg_weights[k]).any():
-                print(f"[FedYOGA-FIX] Detected NaN/Inf in {k}, resetting to safe defaults")
-                if 'running_mean' in k:
-                    agg_weights[k] = torch.zeros_like(agg_weights[k])
-                elif 'running_var' in k:
-                    agg_weights[k] = torch.ones_like(agg_weights[k])
-                elif 'num_batches_tracked' in k:
-                    agg_weights[k] = torch.zeros_like(agg_weights[k])
+        if torch.isnan(agg_weights[k]).any() or torch.isinf(agg_weights[k]).any():
+            print(f"[FedYOGA] WARNING: Aggregated weights contain NaN/Inf for {k}")
+            has_nan_inf = True
     
-    return agg_weights
+    if has_nan_inf:
+        print(f"[FedYOGA] WARNING: Using FedAvg fallback due to NaN/Inf")
+        for k in agg_weights.keys():
+            agg_weights[k] = torch.zeros_like(global_weights[k], dtype=torch.float32)
+            for wi in client_weights:
+                agg_weights[k] += wi[k].to(agg_weights[k].device) / len(client_weights)
+    
+    # 6) Save T_weights state for the next round
+    T_weights_state_new = {
+        'T_weights': T_weights.detach().cpu(),
+        'round': T_weights_state.get('round', 0) + 1 if T_weights_state else 1,
+        'num_groups': num_groups,
+        'num_clients': num_clients
+    }
+    
+    print(f"[FedYOGA] Aggregation complete. T_weights shape {T_weights.shape} saved for next round.")
+    
+    return agg_weights, T_weights_state_new
