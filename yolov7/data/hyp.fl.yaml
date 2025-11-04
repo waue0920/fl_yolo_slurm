@@ -1,0 +1,30 @@
+# Hyperparameters for YOLOv7 Federated Learning (short epochs)
+lr0: 0.01  # initial learning rate
+lrf: 0.1  # final OneCycleLR learning rate
+momentum: 0.937  # SGD momentum
+weight_decay: 0.0005  # optimizer weight decay
+warmup_epochs: 1.0  # warmup epochs (optimized for FL 10 epochs training)
+warmup_momentum: 0.8  # warmup initial momentum
+warmup_bias_lr: 0.1  # warmup initial bias lr
+box: 0.05  # box loss gain
+cls: 0.3  # cls loss gain
+cls_pw: 1.0  # cls BCELoss positive_weight
+obj: 0.7  # obj loss gain
+obj_pw: 1.0  # obj BCELoss positive_weight
+iou_t: 0.20  # IoU training threshold
+anchor_t: 4.0  # anchor-multiple threshold
+fl_gamma: 0.0  # focal loss gamma
+hsv_h: 0.015  # image HSV-Hue augmentation
+hsv_s: 0.7  # image HSV-Saturation augmentation
+hsv_v: 0.4  # image HSV-Value augmentation
+degrees: 0.0  # image rotation
+translate: 0.1  # image translation (reduced)
+scale: 0.5  # image scale (reduced)
+shear: 0.0  # image shear
+perspective: 0.0  # image perspective
+flipud: 0.0  # image flip up-down
+fliplr: 0.5  # image flip left-right
+mosaic: 0.5  # image mosaic (reduced for FL)
+mixup: 0.0  # image mixup (disabled for FL)
+copy_paste: 0.0  # image copy paste
+paste_in: 0.0  # image copy paste

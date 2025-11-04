@@ -6,7 +6,7 @@
 /archive/
 /yolov9/wandb/
 /yolov9/runs/
-yolov9-*.pt
+yolo*.pt
 yolo9t2*.sif
 
 # Ignore the contents of data directories, but keep the placeholder READMEs

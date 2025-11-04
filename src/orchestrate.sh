@@ -116,8 +116,13 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
     fi
     echo "Using weights for this round: ${current_weights}"
 
-        # === Dynamic Hyperparameter Strategy: Switch to FedYOGA HYP from Round 2 ===
-        if [ "${r}" -ge 2 ] && [ -n "${FedyogaHYP}" ] && [ -f "${FedyogaHYP}" ]; then
+        # === Dynamic Hyperparameter Strategy: Switch based on FL_HYP_THRESHOLD ===
+        if [ -z "${FL_HYP_THRESHOLD}" ] || [ "${FL_HYP_THRESHOLD}" -le 2 ] || [ "${FL_HYP_THRESHOLD}" -ge "${TOTAL_ROUNDS}" ]; then
+            echo "Error: FL_HYP_THRESHOLD must be defined in env.sh and greater than 2 but less than TOTAL_ROUNDS." >&2
+            exit 1
+        fi
+
+        if [ "${r}" -ge "${FL_HYP_THRESHOLD}" ] && [ -n "${FedyogaHYP}" ] && [ -f "${FedyogaHYP}" ]; then
             echo "[STRATEGY] Round ${r}: Switching to FedYOGA hyperparameters (${FedyogaHYP})"
             CURRENT_HYP="${FedyogaHYP}"
         else

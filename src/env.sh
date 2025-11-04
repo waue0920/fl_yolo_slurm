@@ -1,4 +1,3 @@
-
 #####################
 ## 全域專案與實驗參數
 #####################
@@ -7,7 +6,7 @@ export EXPERIMENTS_BASE_DIR="${WROOT}/experiments"
 
 ## Dataset
 export DATASET_NAME="${DATASET_NAME:-kittiO}" #bdd100k, kittiO, kitti, sim10k, foggy, cityscapes | kittiOA010 ...
-export CLIENT_NUM=4   # Client 端數量
+export CLIENT_NUM=10   # Client 端數量 
 # 以上在  $WROOT/federated_data/ 內要有 ${DATASET_NAME}_${CLIENT_NUM} 的資料夾
 
 ## Environment
@@ -24,8 +23,9 @@ export SLURM_ACCOUNT="GOV113119" #
 ## FL client 端的 slurm 參數
 #####################
 ## FL
-export TOTAL_ROUNDS=5  # FL Rounds
-export EPOCHS=10
+export TOTAL_ROUNDS=12  # FL Rounds
+export EPOCHS=10 # 
+export FL_HYP_THRESHOLD=11 # FedYOGA local train ，搭配 ROUND 與 EPOCHS 調整
 ## yolo
 export BATCH_SIZE=32   # 需要是 gpu 數量的n數: 一般 GPUsx8 高 GPUsx16 
 export WORKER=8   # cpu = gpu x 4
@@ -73,5 +73,7 @@ export SERVER_FEDOPT_EPS=1e-8
 # FedNova 演算法超參數（Server端命名）
 export SERVER_FEDNOVA_MU=0.0
 export SERVER_FEDNOVA_LR=1.0
+
+
 
 # 目前 scaffold 尚未實作 client 端的 local control_variate 與 server control_variate
