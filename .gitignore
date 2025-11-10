@@ -8,7 +8,7 @@
 /yolov9/runs/
 yolo*.pt
 yolo9t2*.sif
-
+/v7badexp/
 # Ignore the contents of data directories, but keep the placeholder READMEs
 /datasets/*
 !/datasets/README.md
