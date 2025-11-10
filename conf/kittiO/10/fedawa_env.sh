@@ -25,7 +25,7 @@ export SLURM_ACCOUNT="GOV113119" #
 ## FL
 export TOTAL_ROUNDS=12  # FL Rounds
 export EPOCHS=10 # 
-export FL_HYP_THRESHOLD=11 # FedYOGA local train ，搭配 ROUND 與 EPOCHS 調整
+export FL_HYP_THRESHOLD=0 # FedYOGA local train ，搭配 ROUND 與 EPOCHS 調整
 ## yolo
 export BATCH_SIZE=32   # 需要是 gpu 數量的n數: 一般 GPUsx8 高 GPUsx16 
 export WORKER=8   # cpu = gpu x 4

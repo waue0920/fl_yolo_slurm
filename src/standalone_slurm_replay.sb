@@ -1,0 +1,75 @@
+#!/bin/bash
+#SBATCH --partition=gp2d      ## Partition: gtest | gp2d
+#SBATCH --account=GOV113119   ## 高效能計算帳號 113119   物聯網 109135
+#SBATCH --gpus-per-node=2     ## Or use: #SBATCH --gres=gpu:2 (depends on cluster config)
+#SBATCH --cpus-per-task=8
+#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=1
+#SBATCH --job-name=fl_yolo_st
+#SBATCH --output=/home/waue0920/fl_yolo_slurm/experiments/slurm-%j.out
+#SBATCH --error=/home/waue0920/fl_yolo_slurm/experiments/slurm-%j.err
+
+export WROOT="/home/waue0920/fl_yolo_slurm"
+cd "${WROOT}"
+
+set -euo pipefail
+echo "========================================================"
+echo "## Starting Standalone FL Orchestrator (Singularity)"
+echo "## Executing on: $(hostname)"
+echo "## Current Directory: $(pwd)"
+echo "## Received Arguments: $@"
+echo "========================================================"
+
+# --- 0. Parse Arguments ---
+# Usage: sbatch src/standalone_slurm_replay.sb experiments/54_kittiO_fedyoga_4C_12R_202511041545
+EXP_DIR_REL="${1:-experiments/default}"
+echo "Using EXP_DIR (relative to WROOT): ${EXP_DIR_REL}"
+
+# --- 1. Setup Singularity Environment ---
+# Use WROOT environment variable (set by user before execution)
+if [ -z "${WROOT}" ]; then
+    echo "Error: WROOT environment variable is not set"
+    echo "Please run: export WROOT=/path/to/project/root"
+    exit 1
+fi
+
+SINGULARITY_IMG="${WROOT}/yolo9t2_ngc2306_20241226.sif"
+
+echo "Project root: ${WROOT}"
+echo "Singularity image: ${SINGULARITY_IMG}"
+echo "Host EXP_DIR path: ${WROOT}/${EXP_DIR_REL}"
+
+# Check if Singularity image exists
+if [ ! -f "${SINGULARITY_IMG}" ]; then
+    echo "Error: Singularity image not found at ${SINGULARITY_IMG}"
+    exit 1
+fi
+
+# Check if the provided EXP_DIR exists on the host (within WROOT)
+if [ ! -d "${WROOT}/${EXP_DIR_REL}" ]; then
+    echo "Error: EXP_DIR not found at ${WROOT}/${EXP_DIR_REL}"
+    exit 1
+fi
+
+# --- 2. Execute Replay inside Singularity ---
+echo ">> Executing replay standalone inside Singularity container..."
+
+# Prefer array form to avoid eval/quoting issues; enable GPUs with --nv and set working dir.
+CMD=(
+    singularity exec --nv
+    --bind "${WROOT}:${WROOT}"
+    --pwd "${WROOT}"
+    "${SINGULARITY_IMG}"
+    ./src/replay_standalone.sh
+    "${EXP_DIR_REL}"
+)
+
+printf '[CMD] '; printf '%q ' "${CMD[@]}"; echo
+"${CMD[@]}"
+
+echo "========================================================"
+echo "## Done"
+echo "========================================================"
+
+
+

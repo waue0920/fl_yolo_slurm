@@ -25,7 +25,7 @@ export SLURM_ACCOUNT="GOV113119" #
 ## FL
 export TOTAL_ROUNDS=12  # FL Rounds
 export EPOCHS=10 # 
-export FL_HYP_THRESHOLD=11 # FedYOGA local train ，搭配 ROUND 與 EPOCHS 調整
+export FL_HYP_THRESHOLD=0 # FedYOGA local train ，搭配 ROUND 與 EPOCHS 調整
 ## yolo
 export BATCH_SIZE=32   # 需要是 gpu 數量的n數: 一般 GPUsx8 高 GPUsx16 
 export WORKER=8   # cpu = gpu x 4
@@ -44,7 +44,7 @@ export CLIENT_CPUS=8   # cpu = gpu x 4
 #####################
 ## FL Server 端的參數
 #####################
-export SERVER_ALG="fedawa"   # 支持 fedavg, fedprox, fedavgm, fedopt, fedyoga, fedawa, fednova
+export SERVER_ALG="fedyoga"   # 支持 fedavg, fedprox, fedavgm, fedopt, fedyoga, fedawa, fednova
 
 # FedProx 演算法超參數（Server端命名
 export SERVER_FEDPROX_MU=0.01  # FedProx 的 proximal term 係數

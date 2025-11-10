@@ -5,42 +5,37 @@
 # ===================================================================================
 # This script is completely independent of SLURM and integrates all launch logic.
 # It executes the entire FL pipeline sequentially in conda environment.
-# All parameters are read from env.sh, no command-line arguments needed.
-# Usage: ./src/standalone_orchestrate.sh [--dry-run]
+# Primary configuration is read from a config shell file (env-style exports).
+# Usage: ./src/standalone_orchestrate.sh --conf /path/to/your_env.sh [--dry-run]
 #
+# Required flags:
+#    --conf <file> : Path to an env-style bash file exporting variables like
+#                    WROOT, DATASET_NAME, CLIENT_NUM, TOTAL_ROUNDS, etc.
 # Optional flags:
-#    --dry-run:  Show what would be executed without actually running
+#    --dry-run     : Show what would be executed without actually running
 # ===================================================================================
 
 set -e
 set -o pipefail
 
-# --- 1. Parse Optional Flags ---
+# --- 1. Parse Flags ---
 
 VALIDATION_ENABLED=true
 DRY_RUN=false
-# Preserve any externally-exported overrides (e.g. from wrapper) instead of
-# unconditionally overwriting them. If not set, default to empty string.
-SERVER_ALG_CLI="${SERVER_ALG_CLI:-}"
-DATASET_NAME_CLI="${DATASET_NAME_CLI:-}"
+CONF_FILE=""
 
 # Simple argument parsing. Supports:
+#   --conf <file>
 #   --dry-run
-#   --server-alg <algorithm>
-#   --dataset <name>
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --conf)
+            CONF_FILE="$2"
+            shift 2
+            ;;
         --dry-run)
             DRY_RUN=true
             shift
-            ;;
-        --server-alg)
-            SERVER_ALG_CLI="$2"
-            shift 2
-            ;;
-        --dataset)
-            DATASET_NAME_CLI="$2"
-            shift 2
             ;;
         *)
             # ignore unknown args for forward compatibility
@@ -62,31 +57,60 @@ fi
 
 # --- 2. Auto-detect WROOT and Load Environment Configuration ---
 
-# Auto-detect WROOT: Get the directory where this script is located, then go up one level
+# Detect default WROOT based on script location (one level up from this script)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export WROOT="$(dirname "${SCRIPT_DIR}")"
+DETECTED_WROOT="$(dirname "${SCRIPT_DIR}")"
 
-echo "Auto-detected WROOT: ${WROOT}"
-
-# Source environment settings - all parameters come from here
-echo "Import ${WROOT}/src/env.sh"
-source "${WROOT}/src/env.sh"
-
-# If a command-line/server wrapper provided overrides, prefer them over env.sh
-if [ -n "${SERVER_ALG_CLI}" ]; then
-    echo "Overriding SERVER_ALG from env.sh with CLI value: ${SERVER_ALG_CLI}"
-    export SERVER_ALG="${SERVER_ALG_CLI}"
+# Load configuration from --conf if provided; otherwise fallback to default env.sh
+CONF_PROVIDED=false
+if [ -n "${CONF_FILE}" ]; then
+    if [ ! -f "${CONF_FILE}" ]; then
+        echo "Error: --conf specified but file not found: ${CONF_FILE}"
+        exit 1
+    fi
+    echo "Using configuration file: ${CONF_FILE}"
+    # Do not override WROOT before sourcing; let the config define it.
+    # shellcheck disable=SC1090
+    source "${CONF_FILE}"
+    CONF_PROVIDED=true
+    # If config didn't define WROOT, fallback to detected one
+    if [ -z "${WROOT}" ]; then
+        export WROOT="${DETECTED_WROOT}"
+        echo "WROOT not defined in config; falling back to detected: ${WROOT}"
+    fi
+else
+    # No --conf provided; use default project env
+    export WROOT="${DETECTED_WROOT}"
+    echo "Auto-detected WROOT: ${WROOT}"
+    echo "Import ${WROOT}/src/env.sh"
+    # shellcheck disable=SC1090
+    source "${WROOT}/src/env.sh"
+    CONF_FILE="${WROOT}/src/env.sh"
 fi
 
-if [ -n "${DATASET_NAME_CLI}" ]; then
-    echo "Overriding DATASET_NAME from env.sh with CLI value: ${DATASET_NAME_CLI}"
-    export DATASET_NAME="${DATASET_NAME_CLI}"
-fi
 
-# Validate required parameters from env.sh
+# NCCL Setup
+get_free_port() {
+    while :; do
+        PORT=$(( ( RANDOM % 50000 )  + 10000 ))
+        # 檢查 port 是否已被使用
+        if ! lsof -i:"$PORT" >/dev/null 2>&1; then
+            echo "$PORT"
+            return
+        fi
+    done
+}
+MASTER_PORT=$(get_free_port)
+NNODES=1
+NODE_RANK=0
+MASTER_ADDR=localhost
+
+
+
+# Validate required parameters from configuration
 if [ -z "${DATASET_NAME}" ] || [ -z "${CLIENT_NUM}" ] || [ -z "${TOTAL_ROUNDS}" ]; then
-    echo "Error: Required parameters not set in env.sh"
-    echo "Please check DATASET_NAME, CLIENT_NUM, and TOTAL_ROUNDS in ${WROOT}/src/env.sh"
+    echo "Error: Required parameters not set in configuration file (${CONF_FILE})"
+    echo "Please ensure DATASET_NAME, CLIENT_NUM, and TOTAL_ROUNDS are exported in ${CONF_FILE}"
     exit 1
 fi
 
@@ -119,6 +143,7 @@ export EXP_ID="${RUN_NUM}_${DATASET_NAME}_${SERVER_ALG}_${CLIENT_NUM}C_${TOTAL_R
 
 # Record environment configuration
 echo "========== Environment Configuration =========="
+echo "CONFIG_FILE:     ${CONF_FILE}"
 echo "WROOT:           ${WROOT}"
 echo "DATASET_NAME:    ${DATASET_NAME}"
 echo "CLIENT_NUM:      ${CLIENT_NUM}"
@@ -138,11 +163,16 @@ echo "=================================================="
 export EXP_DIR="${EXPERIMENTS_BASE_DIR}/${EXP_ID}"
 export SRC_DIR="${WROOT}/src"
 
+# Respect MODEL_CFG set by configuration; fallback to YOLOv9 default
+MODEL_CFG="${MODEL_CFG:-${WROOT}/yolov9/models/detect/yolov9-c.yaml}"
+
 # ===================================================================================
 #
 #  RUN THE FULL PIPELINE (SEQUENTIAL EXECUTION)
 #
 # ===================================================================================
+
+
 
 # --- 5. Create Directories ---
 echo "######################################################################"
@@ -153,7 +183,14 @@ mkdir -p "${EXP_DIR}/slurm_logs"
 mkdir -p "${EXP_DIR}/client_outputs/${EXP_ID}"
 mkdir -p "${EXP_DIR}/aggregated_weights"
 mkdir -p "${EXP_DIR}/fed_agg_logs"
-cp "${WROOT}/src/env.sh" "${EXP_DIR}/env.sh"
+# Save the configuration used for this run into the experiment folder
+if [ "${CONF_PROVIDED}" = true ]; then
+    # Copy the provided config file into the experiment folder (keep original name)
+    cp "${CONF_FILE}" "${EXP_DIR}/"
+else
+    # No config provided: copy default and rename to def_env.sh for clarity
+    cp "${WROOT}/src/env.sh" "${EXP_DIR}/def_env.sh"
+fi
 
 # --- 6. Setup Logging ---
 exec > >(tee -a "${EXP_DIR}/orchestrator.log")
@@ -181,17 +218,27 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
     echo "Using weights for this round: ${current_weights}"
 
     # === Dynamic Hyperparameter Strategy: Switch based on FL_HYP_THRESHOLD ===
-    if [ -z "${FL_HYP_THRESHOLD}" ] || [ "${FL_HYP_THRESHOLD}" -le 2 ] || [ "${FL_HYP_THRESHOLD}" -ge "${TOTAL_ROUNDS}" ]; then
-        echo "Error: FL_HYP_THRESHOLD must be defined in env.sh and greater than 2 but less than TOTAL_ROUNDS." >&2
-        exit 1
-    fi
-
-    if [ "${r}" -ge "${FL_HYP_THRESHOLD}" ] && [ -n "${FedyogaHYP}" ] && [ -f "${FedyogaHYP}" ]; then
-        echo "[STRATEGY] Round ${r}: Switching to FedYOGA hyperparameters (${FedyogaHYP})"
-        CURRENT_HYP="${FedyogaHYP}"
-    else
-        echo "[STRATEGY] Round ${r}: Using standard hyperparameters (${HYP})"
+    # FL_HYP_THRESHOLD = 0 or unset: disable switching, always use HYP
+    # FL_HYP_THRESHOLD > 0: must be <= TOTAL_ROUNDS; switch to FedyogaHYP when round >= threshold
+    if [ -z "${FL_HYP_THRESHOLD}" ] || [ "${FL_HYP_THRESHOLD}" -eq 0 ]; then
+        # Disabled: always use standard HYP
+        echo "[STRATEGY] Round ${r}: Hyperparameter switching disabled (FL_HYP_THRESHOLD=${FL_HYP_THRESHOLD:-unset})"
         CURRENT_HYP="${HYP}"
+    else
+        # Validate threshold is reasonable
+        if [ "${FL_HYP_THRESHOLD}" -gt "${TOTAL_ROUNDS}" ]; then
+            echo "Error: FL_HYP_THRESHOLD (${FL_HYP_THRESHOLD}) must be <= TOTAL_ROUNDS (${TOTAL_ROUNDS})." >&2
+            exit 1
+        fi
+        
+        # Apply switching logic
+        if [ "${r}" -ge "${FL_HYP_THRESHOLD}" ] && [ -n "${FedyogaHYP}" ] && [ -f "${FedyogaHYP}" ]; then
+            echo "[STRATEGY] Round ${r}: Switching to FedYOGA hyperparameters (${FedyogaHYP})"
+            CURRENT_HYP="${FedyogaHYP}"
+        else
+            echo "[STRATEGY] Round ${r}: Using standard hyperparameters (${HYP})"
+            CURRENT_HYP="${HYP}"
+        fi
     fi
     
     # Rebuild TRAIN_EXTRA_ARGS with the current hyperparameter file
@@ -209,15 +256,9 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
         WANDB_RUN_NAME="r${r}_c${c}"
         PROJECT_OUT="${EXP_DIR}/client_outputs/${EXP_ID}"
 
-        # === Integrated Client Training Logic (Conda Environment) ===
-        
-        MODEL_CFG="${WROOT}/yolov9/models/detect/yolov9-c.yaml"
+    # === Integrated Client Training Logic (Conda Environment) ===
 
-        # Dynamic port allocation
-        MASTER_PORT=59527
-        NNODES=1
-        NODE_RANK=0
-        MASTER_ADDR=localhost
+
 
         # GPU configuration
         NPROC_PER_NODE=${AVAILABLE_GPUS}

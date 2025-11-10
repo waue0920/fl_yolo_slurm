@@ -31,13 +31,16 @@ EXP_DIR="$1"
 DEVICE="0"
 BASELINE="yolov9-c.pt"
 
-# If experiment env.sh exists, source it to get DATASET_NAME, etc.
-if [ -f "${EXP_DIR}/env.sh" ]; then
+# Find and source config file matching *_env.sh pattern in experiment directory
+ENV_FILE=$(find "${EXP_DIR}" -maxdepth 1 -name "*env.sh" -type f | head -n 1)
+
+if [ -n "${ENV_FILE}" ]; then
     # shellcheck source=/dev/null
-    source "${EXP_DIR}/env.sh"
-    echo "Sourced ${EXP_DIR}/env.sh"
+    source "${ENV_FILE}"
+    echo "Sourced configuration: ${ENV_FILE}"
 else
-    echo "No env.sh found in ${EXP_DIR}; using defaults or data/kitti.yaml" >&2
+    echo "Warning: No configuration file matching '*env.sh' found in ${EXP_DIR}" >&2
+    echo "Using defaults or data/kitti.yaml" >&2
 fi
 
 # Ensure WROOT is set (either from env.sh or default to project root)

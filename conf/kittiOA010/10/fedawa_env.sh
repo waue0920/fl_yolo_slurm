@@ -5,7 +5,7 @@ export WROOT="/home/waue0920/fl_yolo_slurm"
 export EXPERIMENTS_BASE_DIR="${WROOT}/experiments"
 
 ## Dataset
-export DATASET_NAME="kittiO" #bdd100k, kittiO, kitti, sim10k, foggy, cityscapes | kittiOA010 ...
+export DATASET_NAME="kittiOA010" #bdd100k, kittiO, kitti, sim10k, foggy, cityscapes | kittiOA010 ...
 export CLIENT_NUM=10   # Client 端數量 
 # 以上在  $WROOT/federated_data/ 內要有 ${DATASET_NAME}_${CLIENT_NUM} 的資料夾
 
@@ -25,7 +25,7 @@ export SLURM_ACCOUNT="GOV113119" #
 ## FL
 export TOTAL_ROUNDS=12  # FL Rounds
 export EPOCHS=10 # 
-export FL_HYP_THRESHOLD=11 # FedYOGA local train ，搭配 ROUND 與 EPOCHS 調整
+export FL_HYP_THRESHOLD=0 # FedYOGA local train ，搭配 ROUND 與 EPOCHS 調整
 ## yolo
 export BATCH_SIZE=32   # 需要是 gpu 數量的n數: 一般 GPUsx8 高 GPUsx16 
 export WORKER=8   # cpu = gpu x 4
