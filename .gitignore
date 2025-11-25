@@ -6,11 +6,12 @@
 /archive/
 /yolov9/wandb/
 /yolov9/runs/
-yolo*.pt
+*.pt
 yolo9t2*.sif
 /v7badexp/
 # Ignore the contents of data directories, but keep the placeholder READMEs
 /datasets/*
+/conf/
 !/datasets/README.md
 /federated_data/*
 !/federated_data/README.md

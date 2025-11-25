@@ -1,9 +1,0 @@
-Class	C1	C2	C3	C4
-Car	3	390	24649	666
-Van	0	363	3178	543
-Truck	0	46	2281	280
-Pedestrian	3	240	1096	113
-Person Sitting	0	0	947	30
-Cyclist	0	84	738	51
-Tram	3	59	401	9
-Misc	0	17	148	35

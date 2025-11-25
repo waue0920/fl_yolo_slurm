@@ -10,9 +10,10 @@ sleep 1m
 sbatch ./src/standalone_slurm.sb conf/kittiOA010/4/fedavgm_env.sh
 sleep 1m
 sbatch ./src/standalone_slurm.sb conf/kittiOA010/4/fedprox_env.sh
-sleep 1m
-sbatch ./src/standalone_slurm.sb conf/kittiOA010/4/fednova_env.sh
-sleep 1m
-sbatch ./src/standalone_slurm.sb conf/kittiOA010/4/fedawa_env.sh
-sleep 1m
-sbatch ./src/standalone_slurm.sb conf/kittiOA010/4/fedyoga_env.sh
+# sleep 1m
+# sbatch ./src/standalone_slurm.sb conf/kittiA010/4/fednova_env.sh
+# sleep 1m
+# sbatch ./src/standalone_slurm.sb conf/kittiA010/4/fedawa_env.sh
+# sleep 1m
+# sbatch ./src/standalone_slurm.sb conf/kittiA010/4/fedyoga_env.sh
+# sleep 1m

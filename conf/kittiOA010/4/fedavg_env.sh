@@ -23,7 +23,7 @@ export SLURM_ACCOUNT="GOV113119" #
 ## FL client 端的 slurm 參數
 #####################
 ## FL
-export TOTAL_ROUNDS=12  # FL Rounds
+export TOTAL_ROUNDS=10  # FL Rounds
 export EPOCHS=10 # 
 export FL_HYP_THRESHOLD=0 # FedYOGA local train ，搭配 ROUND 與 EPOCHS 調整
 ## yolo

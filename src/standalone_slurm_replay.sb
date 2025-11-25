@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --partition=gp2d      ## Partition: gtest | gp2d
-#SBATCH --account=GOV113119   ## 高效能計算帳號 113119   物聯網 109135
+#SBATCH --account=GOV109135   ## 高效能計算帳號 113119   物聯網 109135
 #SBATCH --gpus-per-node=2     ## Or use: #SBATCH --gres=gpu:2 (depends on cluster config)
 #SBATCH --cpus-per-task=8
 #SBATCH --ntasks-per-node=1
 #SBATCH --nodes=1
-#SBATCH --job-name=fl_yolo_st
+#SBATCH --job-name=fl_yolo_replay
 #SBATCH --output=/home/waue0920/fl_yolo_slurm/experiments/slurm-%j.out
 #SBATCH --error=/home/waue0920/fl_yolo_slurm/experiments/slurm-%j.err
 

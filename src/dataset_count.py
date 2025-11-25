@@ -19,6 +19,30 @@ def count_labels(label_dir):
     return counts
 
 def main(root_folder):
+    # Image counts
+    images_root = os.path.join(root_folder, 'images')
+    train_dir = os.path.join(images_root, 'train')
+    val_dir = os.path.join(images_root, 'val')
+    train_count = 0
+    val_count = 0
+    total = 0
+    if os.path.isdir(train_dir):
+        train_count = sum(1 for f in os.listdir(train_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png')))
+    if os.path.isdir(val_dir):
+        val_count = sum(1 for f in os.listdir(val_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png')))
+    # if images/ contains files directly, count them too (used when no train/val subdirs)
+    if os.path.isdir(images_root):
+        total = sum(1 for f in os.listdir(images_root) if f.lower().endswith(('.jpg', '.jpeg', '.png')))
+    if train_count or val_count:
+        total = train_count + val_count
+
+    # print image counts first
+    print('-- Image counts --')
+    print(f'images: {total}')
+    print(f'- images/train: {train_count}')
+    print(f'- images/val: {val_count}')
+    print('\n')
+
     # 假設所有標註在 <root_folder>/labels/ 或 <root_folder>/labels/train/ 下
     label_dirs = [os.path.join(root_folder, 'labels'), os.path.join(root_folder, 'labels', 'train')]
     all_counts = defaultdict(int)
@@ -35,9 +59,10 @@ def main(root_folder):
         print("No labels directory found!")
         exit(2)
     
-    print("ClassID\tCount")
+    print('-- Label class counts --')
+    print('class_id, count')
     for class_id in sorted(all_counts):
-        print(f"{class_id}\t{all_counts[class_id]}")
+        print(f'{class_id}, {all_counts[class_id]}')
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

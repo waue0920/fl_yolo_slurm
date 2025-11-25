@@ -10,6 +10,10 @@ from typing import Dict
 import yaml
 from tqdm import tqdm
 
+# Disable bounding-box image uploads by default to save I/O and bandwidth
+# Can be overridden by setting WANDB_MAX_IMGS environment variable before importing this module
+os.environ.setdefault('WANDB_MAX_IMGS', '0')
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -230,6 +234,14 @@ class WandbLogger():
         """
         self.log_dict, self.current_epoch = {}, 0
         self.bbox_interval = opt.bbox_interval
+        
+        # Double protection: enforce minimum bbox_interval to prevent excessive image uploads
+        # This provides a safety net even if --bbox-interval is not set in training args
+        MIN_BBOX_INTERVAL = 500
+        if opt.bbox_interval < MIN_BBOX_INTERVAL and opt.bbox_interval != -1:
+            opt.bbox_interval = MIN_BBOX_INTERVAL
+            self.bbox_interval = MIN_BBOX_INTERVAL
+        
         if isinstance(opt.resume, str):
             modeldir, _ = self.download_model_artifact(opt)
             if modeldir:
@@ -503,21 +515,24 @@ class WandbLogger():
         if self.val_table and self.result_table:  # Log Table if Val dataset is uploaded as artifact
             self.log_training_progress(predn, path, names)
 
-        if len(self.bbox_media_panel_images) < self.max_imgs_to_log and self.current_epoch > 0:
-            if self.current_epoch % self.bbox_interval == 0:
-                box_data = [{
-                    "position": {
-                        "minX": xyxy[0],
-                        "minY": xyxy[1],
-                        "maxX": xyxy[2],
-                        "maxY": xyxy[3]},
-                    "class_id": int(cls),
-                    "box_caption": f"{names[int(cls)]} {conf:.3f}",
-                    "scores": {
-                        "class_score": conf},
-                    "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
-                boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-                self.bbox_media_panel_images.append(wandb.Image(im, boxes=boxes, caption=path.name))
+        # Disabled BoundingBoxDebugger image collection to save I/O and bandwidth
+        # This prevents uploading hundreds of images per run (16 imgs × epochs × clients × rounds)
+        pass
+        # if len(self.bbox_media_panel_images) < self.max_imgs_to_log and self.current_epoch > 0:
+        #     if self.current_epoch % self.bbox_interval == 0:
+        #         box_data = [{
+        #             "position": {
+        #                 "minX": xyxy[0],
+        #                 "minY": xyxy[1],
+        #                 "maxX": xyxy[2],
+        #                 "maxY": xyxy[3]},
+        #             "class_id": int(cls),
+        #             "box_caption": f"{names[int(cls)]} {conf:.3f}",
+        #             "scores": {
+        #                 "class_score": conf},
+        #             "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
+        #         boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
+        #         self.bbox_media_panel_images.append(wandb.Image(im, boxes=boxes, caption=path.name))
 
     def log(self, log_dict):
         """
@@ -539,8 +554,9 @@ class WandbLogger():
         """
         if self.wandb_run:
             with all_logging_disabled():
-                if self.bbox_media_panel_images:
-                    self.log_dict["BoundingBoxDebugger"] = self.bbox_media_panel_images
+                # Disabled BoundingBoxDebugger upload - images are not collected anymore
+                # if self.bbox_media_panel_images:
+                #     self.log_dict["BoundingBoxDebugger"] = self.bbox_media_panel_images
                 try:
                     wandb.log(self.log_dict)
                 except BaseException as e:
