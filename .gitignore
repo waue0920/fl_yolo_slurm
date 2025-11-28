@@ -6,6 +6,7 @@
 /archive/
 /yolov9/wandb/
 /yolov9/runs/
+/tools/demo*/
 *.pt
 yolo9t2*.sif
 /v7badexp/
