@@ -15,19 +15,13 @@
 # Usage: sbatch src/run.sb <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--val]
 # ex :
 # sbatch src/run.sb kitti 4 5
-# Use SLURM_SUBMIT_DIR if valid, otherwise current directory
-WORK_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
+# sbatch src/run.sb cityscapes 4 5 --val
+# ===================================================================================
 
-# Source env.sh to get WROOT and other variables
-# Assumes the script is run from project root or src/env.sh is available relative to WORK_DIR
-if [ -f "${WORK_DIR}/src/env.sh" ]; then
-    source "${WORK_DIR}/src/env.sh"
-elif [ -f "./src/env.sh" ]; then
-    source "./src/env.sh"
-else
-    echo "Error: src/env.sh not found. Please run sbatch from the project root."
-    exit 1
-fi
+export WROOT="/home/waue0920/waue/git/fl_yolo_slurm"
+
+set -e
+set -o pipefail
 
 ### Logic Explanation
 ## (Login Node ln)

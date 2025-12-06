@@ -128,7 +128,6 @@ python \
 ###  Issue with different clients grabbing same port, cross-node temporarily unsolved
 # singularity exec --nv \
 #     --bind ${WROOT}:${WROOT} \
-#     --bind /path/to/dataset/yolo:/path/to/dataset/yolo \
 #     "${SINGULARITY_IMG}" \
 # torchrun \
 #     --nproc_per_node=${NPROC_PER_NODE} \

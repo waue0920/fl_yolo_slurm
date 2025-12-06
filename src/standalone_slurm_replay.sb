@@ -9,19 +9,7 @@
 #SBATCH --output=experiments/slurm-%j.out
 #SBATCH --error=experiments/slurm-%j.err
 
-# Use SLURM_SUBMIT_DIR if valid, otherwise current directory
-WORK_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
-
-# Source env.sh to setup WROOT
-if [ -f "${WORK_DIR}/src/env.sh" ]; then
-    source "${WORK_DIR}/src/env.sh"
-elif [ -f "./src/env.sh" ]; then
-    source "./src/env.sh"
-else
-    echo "Error: src/env.sh not found. Please run sbatch from the project root."
-    exit 1
-fi
-
+export WROOT="/home/waue0920/fl_yolo_slurm"
 cd "${WROOT}"
 
 set -euo pipefail

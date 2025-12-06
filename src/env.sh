@@ -44,7 +44,7 @@ export CLIENT_CPUS=8   # cpu = gpu x 4
 #####################
 ## FL Server Parameters
 #####################
-export SERVER_ALG="fedawa"   # Supports fedavg, fedprox, fedavgm, fedopt, fedyoga, fedawa, fednova
+export SERVER_ALG="fedawa"   # Supports fedavg, fedavgm, fedyoga, fedawa, fednova
 
 # FedProx Hyperparameters (Server-side naming)
 export SERVER_FEDPROX_MU=0.01  # Proximal term coefficient for FedProx

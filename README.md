@@ -1,33 +1,77 @@
-# YOLOv9 Federated Learning Framework
-
-A Federated Learning system based on YOLOv9, utilizing the Slurm cluster environment for distributed training and aggregation.
-
 [**中文說明 (Chinese)**](README_zh.md)
 
----
-
-## 📋 Quick Guide
+# Paper : FedYOGA implementation 
+## Quick Guide
 
 ### 1. Introduction
-- [System Overview](#-system-overview)
-- [Requirements](#-requirements)
-- [Installation & Setup](#-installation--setup)
-- [Directory Structure](#-directory-structure)
+
+- [1.1 Directory Structure](#-directory-structure)
+- [1.2 Dataset Preparation](#-dataset-preparation)
 
 ### 2. Execution
-- [Quick Start (Auto Mode)](#-quick-start)
-- [Replay Experiment](#-replay-experiment)
-- [Standalone Mode (No Slurm)](#-standalone-mode)
-- [Unit Tests](#-unit-tests)
+
+Two execution modes:
+- (2A) Slurm mode: Default uses NCHC TWCC HPC environment, plug-and-play mode, execution environment is Singularity container.
+- (2B) Standalone mode: Execution environment recommends using conda environment, same package library as yolov9.
+
+#### (2A) Slurm Mode
+- [2A.1 System Overview](#-system-overview)
+- [2A.2 Requirements](#-requirements)
+- [2A.3 Quick Start](#-quick-start)
+- [2A.4 Replay Experiment](#-replay-experiment)
+
+#### (2B) Standalone Mode
+- [2B.1 Environment Setup](#-environment-setup)
+- [2B.2 Standalone Mode (No Slurm)](#-standalone-mode-no-slurm)
+- [2B.3 Unit Tests](#-unit-tests)
 
 ### 3. Validation & Extras
-- [Model Validation](#-model-validation)
-- [Monitoring & Debugging](#-monitoring--debugging)
-- [Supported Algorithms](#-supported-algorithms)
+- [3.1 Model Validation](#-model-validation)
+- [3.2 Monitoring & Debugging](#-monitoring--debugging)
+- [3.3 Supported Algorithms](#-supported-algorithms)
+
+### 4. Execution Result Snapshots
 
 ---
 
-## 🎯 System Overview
+## 1. Introduction
+
+### 1.1 Directory Structure
+```
+.
+├── README.md               # Documentation (English)
+├── README_zh.md            # Documentation (Chinese)
+├── readme_sop.md           # Manual SOP Guide
+├── readme_val.md           # Validation Guide
+├── readme_debug.md         # Debugging Guide
+├── yolov9/                 # YOLOv9 Source (Git Submodule)
+├── src/                    # Source Code
+│   ├── orchestrate.sh      # Main Script
+│   └── ...                 # Helper Scripts
+├── data/                   # Dataset YAML Configs
+├── datasets/               # Raw Datasets
+├── federated_data/         # Partioned Client Data
+├── experiments/            # Experiment Outputs
+│   └── {EXP_ID}/
+├── yolo9t2_ngc2306_20241226.sif    # Singularity Container
+└── yolov9-c.pt             # Initial Pre-trained Weights
+```
+
+Ensure the following files are in the project root:
+- **Singularity Image**: `yolo9t2_ngc2306_20241226.sif` ([twcc-cos download](https://cos.twcc.ai/wauehpcproject/yolo9t2_ngc2306_20241226.sif))
+- **Initial Weights**: `yolov9-c.pt` ([official download](https://github.com/WongKinYiu/yolov9/releases/download/v0.1/yolov9-c.pt))
+
+
+### 1.2 Dataset Preparation
+Place your datasets in the `datasets/` directory and create corresponding `.yaml` config files in `data/`.
+- **[Dataset Preparation Guide](./readme_datasets.md)**
+
+
+## 2. Quick Start
+
+### 2A  Fully Automated Mode (Slurm Cluster)
+
+#### 2A.1 System Overview
 
 This framework is designed to implement a complete Federated Learning (FL) workflow using the NCHC HPC cluster environment (TWCC / N5).
 
@@ -42,9 +86,8 @@ Round 3: w_s_r2.pt  → [Client1, Client2, Client3, Client4] → w_s_r3.pt
 ```
 ![FL Workflow](pics/fl_hpc_overview.gif)
 
----
 
-## 🛠️ Requirements
+#### 2A.2 Requirements
 - **Execution Environment**: NCHC [TWCC](https://www.nchc.org.tw/Page?itemid=6&mid=10)
   - **OS**: Linux
   - **Scheduler**: Slurm Workload Manager
@@ -54,56 +97,14 @@ Round 3: w_s_r2.pt  → [Client1, Client2, Client3, Client4] → w_s_r3.pt
   - **PyTorch**: PyTorch (≥ 2.1.0)
   - **Experiment Tracking**: Wandb
 
----
+#### 2A.3 Execution
 
-## 📦 Installation & Setup
+! Modify WROOT environment variable in src/env.sh
 
-### 1. Clone Project & Submodules
-```bash
-# Clone the main repository
-git clone <repository-url>
-cd fl_yolo_slurm
+export WROOT="/home/waue0920/fl_yolo_slurm"
+export SLURM_ACCOUNT="GOV113119" 
 
-# Download yolov9 submodule
-# (Or manually: git clone https://github.com/WongKinYiu/yolov9.git)
-git submodule update --init --recursive
-```
 
-### 2. Prepare Necessary Files
-Ensure the following files are in the project root:
-- **Singularity Image**: `yolo9t2_ngc2306_20241226.sif` ([twcc-cos download](https://cos.twcc.ai/wauehpcproject/yolo9t2_ngc2306_20241226.sif))
-- **Initial Weights**: `yolov9-c.pt` ([official download](https://github.com/WongKinYiu/yolov9/releases/download/v0.1/yolov9-c.pt))
-
-### 3. Prepare Datasets
-Place your datasets in the `datasets/` directory and create corresponding `.yaml` config files in `data/`.
-- **[📖 Dataset Preparation Guide](./readme_datasets.md)**
-
-### 4. Directory Structure
-```
-.
-├── README.md               # Documentation (English)
-├── README_zh.md            # Documentation (Chinese)
-├── readme_sop.md           # 📖 Manual SOP Guide
-├── readme_val.md           # 📊 Validation Guide
-├── readme_debug.md         # 🔍 Debugging Guide
-├── yolov9/                 # YOLOv9 Source (Git Submodule)
-├── src/                    # Source Code
-│   ├── orchestrate.sh      # Main Script
-│   └── ...                 # Helper Scripts
-├── data/                   # Dataset YAML Configs
-├── datasets/               # Raw Datasets
-├── federated_data/         # Partioned Client Data
-├── experiments/            # Experiment Outputs
-│   └── {EXP_ID}/
-├── yolo9t2_ngc2306_20241226.sif    # Singularity Container
-└── yolov9-c.pt             # Initial Pre-trained Weights
-```
-
----
-
-## 🚀 Quick Start
-
-### Fully Automated Mode (Slurm Cluster)
 ```bash
 # Method 1: Using sbatch (All jobs run on worker nodes)
 sbatch src/run.sb 
@@ -119,48 +120,59 @@ The execution will automatically detect if dataset partitioning is needed, then 
 
 ![slurm](pics/sim10k_c4_r5_slurm.png)
 
----
 
-## 🔄 Replay Experiment
+#### 2A.4 Replay Experiment
 
 If a Federated Learning experiment fails mid-way, you can use `replay.sh` to resume from the breaking point:
 
 ```bash
-# Specify experiment directory, automatically detects finished rounds and resumes
 ./src/replay.sh experiments/18_kitti_fedavg_4C_6R_202510010849
 ```
 
-**Features**:
 - ✅ Automatically detects finished rounds
 - ✅ Resumes from failure point
 - ✅ Complete logging
 - ✅ Avoids re-running completed rounds
 
----
 
-## 💻 Standalone Mode (No Slurm)
+### 2B Standalone Mode (No Slurm)
 
-Suitable for local environments or servers without Slurm:
+Suitable for local environments or servers without Slurm.
 
-```bash
-# Parameters are read from env.sh
-./src/standalone_orchestrate.sh
-
-# Dry-run mode: Show commands without execution
-./src/standalone_orchestrate.sh --dry-run
-```
-
-**Features**:
 - ✅ No Slurm required
 - ✅ Sequential execution of client training
 - ✅ Good for small-scale testing and debugging
 - ✅ Supports dry-run preview
 
----
+#### 2B.1 Environment Setup
+```bash
+# Install Python dependencies using YOLOv9's requirements
+pip install -r yolov9/requirements.txt
+```
 
-## 🧪 Unit Tests
+#### 2B.2 Run Standalone Mode
+* Using kitti dataset as example
+* Modify WROOT environment variable in conf/kittiO/4/fedavg_env.sh
+* Other slurm settings can be ignored (not used)
+
+export WROOT="/home/waue0920/fl_yolo_slurm"
+
+```bash
+# Parameters are read from env.sh
+./src/standalone_orchestrate.sh --conf conf/kittiO/4/fedavg_env.sh
+
+# Dry-run mode: Show commands without execution
+./src/standalone_orchestrate.sh --dry-run
+```
+
+
+#### 2B.3 Unit Tests
 
 Quickly test aggregation algorithms and training flows:
+**Test Process**:
+1. Use existing Round 1 client outputs for aggregation test
+2. Use aggregated weights for Round 2 client training test
+3. Verify loss values and NaN/Inf handling
 
 ```bash
 # Edit src/run_unit_test.sh to set EXP_ID and algorithm
@@ -168,106 +180,50 @@ Quickly test aggregation algorithms and training flows:
 ./src/run_unit_test.sh
 ```
 
-**Test Process**:
-1. Use existing Round 1 client outputs for aggregation test
-2. Use aggregated weights for Round 2 client training test
-3. Verify loss values and NaN/Inf handling
 
----
-
-### 📖 Manual SOP (Advanced)
-**Note**: Manual SOP mode is deprecated in v3 in favor of automation.
-For historical reference or detailed step-by-step breakdown, please refer to:
-- **[📖 Manual SOP Guide](./readme_sop.md)**
-
-For current detailed control, use `standalone_orchestrate.sh` or refer to the scripts directly.
-
----
-
-## 📊 Model Validation
+### 3.1 Model Validation
 
 The system provides complete analysis of FL model performance.
-- **[📊 Model Validation Guide](./readme_val.md)**
+- **[Model Validation Guide](./readme_val.md)**
 
 ![validation](pics/kitti_c4_r3_val.png)
 
----
 
-## 🔍 Monitoring & Debugging
+### 3.2 Monitoring & Debugging
 
 Provides Slurm monitoring, log checking, and solutions for common issues.
-- **[🔍 Monitoring & Debugging Guide](./readme_debug.md)**
+- **[Monitoring & Debugging Guide](./readme_debug.md)**
 
----
 
-## 🧮 Supported Algorithms
+### 3.3 Supported Algorithms
 
 Configure `SERVER_ALG` in `src/env.sh`:
 
 | Algorithm | Description | Scenario | Hyperparameters |
 |-----------|-------------|----------|-----------------|
 | **fedavg** | Federated Averaging | General, IID Data | - |
-| **fedprox** | FedProx | Non-IID Data | `SERVER_FEDPROX_MU` |
 | **fedavgm** | FedAvgM (Server Momentum) | Faster Convergence | `SERVER_FEDAVGM_LR`, `SERVER_FEDAVGM_MOMENTUM` |
-| **fedopt** | FedOpt (Server Adam) | Stable Training | `SERVER_FEDOPT_LR`, `SERVER_FEDOPT_BETA1`, `SERVER_FEDOPT_BETA2` |
-| **fedyoga** | **FedYOGA (Adaptive)** | **Non-IID, Imbalanced** | `SERVER_FEDYOGA_PCA_DIM`, `SERVER_FEDYOGA_CLIP_THRESHOLD`, etc. |
+| **fedawa** | FedAWA (Adaptive Weight Aggregation) | Non-IID Data | `SERVER_FEDAWA_SERVER_LR`, `SERVER_FEDAWA_GAMMA` |
+| **fedyoga** | **FedYOGA (Adaptive)** | **Non-IID, Imbalanced** | `SERVER_FEDYOGA_SERVER_LR`, `SERVER_FEDYOGA_GAMMA` |
 | **fednova** | FedNova | Heterogeneous Steps | `SERVER_FEDNOVA_MU`, `SERVER_FEDNOVA_LR` |
 
-### FedYOGA Features
 
-**FedYOGA** is an advanced aggregation algorithm optimized for Non-IID and imbalanced data:
+## 4. Execution Result Snapshots
 
-- ✅ **PCA Dimensionality Reduction**: Reduces weight variance dimensions for efficient aggregation.
-- ✅ **Adaptive Weights**: Dynamically adjusts weights based on client loss drop and gradient variance.
-- ✅ **Numerical Stability**:
-  - Auto-detects and repairs NaN/Inf in BatchNorm statistics.
-  - Skips corrupted client weights.
-  - Weight difference clipping.
-- ✅ **Complexity Analysis**: Auto-calculates space and communication complexity.
+The following are some visualization results from the Federated Learning process, including model validation performance and training metrics.
 
-**Configuration Example** (`src/env.sh`):
-```bash
-export SERVER_ALG="fedyoga"
-export SERVER_FEDYOGA_HISTORY_WINDOW=5
-export SERVER_FEDYOGA_PCA_DIM=4
-export SERVER_FEDYOGA_CLIP_THRESHOLD=10.0
-```
-
----
-
-## 🛡️ Error Handling & Stability
-
-### NaN/Inf Auto-Repair
-1. **BatchNorm Repair**: Resets corrupted `running_mean`, `running_var`.
-2. **Critical Parameter Detection**: Skips clients with NaN/Inf weights.
-3. **Diagnostics**: Provides possible causes and solutions.
-
-### Dynamic Port Allocation
-Avoids NCCL port conflicts during parallel client training:
-- Automatically finds available ports (10000-60000).
-- Assigns unique ports to each client.
-
-### Experiment Logs
-All outputs are logged to `experiments/{EXP_ID}/orchestrator.log`.
-
----
-
-**Last Updated**: 2025-10-20
-**Version**: v3.0 (Stability Enhanced)
-**Maintainer**: nchc/waue0920
-
----
-
-## 📸 Snapshots
-
-### 1. Validation Result (Cityscapes, 4 Clients, 5 Rounds)
+### 4.1 Validation Result
+This shows the object detection results on validation images after 4 clients and 5 rounds of Federated Learning using the Cityscapes dataset.
 ![Validation on Cityscapes](pics/cityscape_c4_r5_val.jpg)
 
-### 2. Training Metrics (By Round)
+### 4.2 Training Metrics (By Round)
+The chart below shows the trend of various metrics (such as mAP50, mAP50-95) across 5 federated rounds.
 ![Metrics by Round](pics/cityscape_c4_r5_e50_byRound.png)
 
-### 3. Training Metrics (By Epoch)
+### 4.3 Training Metrics (By Epoch)
+The chart below plots all client training epochs continuously, showing the model's learning curve throughout the entire training process.
 ![Metrics by Epoch](pics/cityscape_c4_r5_e50_byEpoch.png)
 
-### 4. Wandb Dashboard
+### 4.4 Wandb Dashboard
+Wandb provides detailed experiment tracking. Below is a partial screenshot of this experiment on the Wandb dashboard.
 ![Wandb Dashboard](pics/cityscape_c4_r5_e50_Wandb.png)
