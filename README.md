@@ -1,36 +1,28 @@
 [**中文說明 (Chinese)**](README_zh.md)
 
 # Paper : FedYOGA implementation 
-## Quick Guide
+## Table of Contents
 
-### 1. Introduction
-
-- [1.1 Directory Structure](#-directory-structure)
-- [1.2 Dataset Preparation](#-dataset-preparation)
-
-### 2. Execution
-
-Two execution modes:
-- (2A) Slurm mode: Default uses NCHC TWCC HPC environment, plug-and-play mode, execution environment is Singularity container.
-- (2B) Standalone mode: Execution environment recommends using conda environment, same package library as yolov9.
-
-#### (2A) Slurm Mode
-- [2A.1 System Overview](#-system-overview)
-- [2A.2 Requirements](#-requirements)
-- [2A.3 Quick Start](#-quick-start)
-- [2A.4 Replay Experiment](#-replay-experiment)
-
-#### (2B) Standalone Mode
-- [2B.1 Environment Setup](#-environment-setup)
-- [2B.2 Standalone Mode (No Slurm)](#-standalone-mode-no-slurm)
-- [2B.3 Unit Tests](#-unit-tests)
-
-### 3. Validation & Extras
-- [3.1 Model Validation](#-model-validation)
-- [3.2 Monitoring & Debugging](#-monitoring--debugging)
-- [3.3 Supported Algorithms](#-supported-algorithms)
-
-### 4. Execution Result Snapshots
+- [1. Introduction](#1-introduction)
+- [1.1 Directory Structure](#11-directory-structure)
+- [1.2 Dataset Preparation](#12-dataset-preparation)
+- [2. Quick Start](#2-quick-start)
+- [2A.1 System Overview](#2a1-system-overview)
+- [2A.2 Requirements](#2a2-requirements)
+- [2A.3 Execution](#2a3-execution)
+- [2A.4 Replay Experiment](#2a4-replay-experiment)
+- [2B.1 Environment Setup](#2b1-environment-setup)
+- [2B.2 Run Standalone Mode](#2b2-run-standalone-mode)
+- [2B.3 Unit Tests](#2b3-unit-tests)
+- [3. Validation & Extras](#3-validation--extras)
+- [3.1 Model Validation](#31-model-validation)
+- [3.2 Monitoring & Debugging](#32-monitoring--debugging)
+- [3.3 Supported Algorithms](#33-supported-algorithms)
+- [4. Execution Result Snapshots](#4-execution-result-snapshots)
+- [4.1 Validation Result](#41-validation-result)
+- [4.2 Training Metrics (By Round)](#42-training-metrics-by-round)
+- [4.3 Training Metrics (By Epoch)](#43-training-metrics-by-epoch)
+- [4.4 Wandb Dashboard](#44-wandb-dashboard)
 
 ---
 
@@ -68,6 +60,10 @@ Place your datasets in the `datasets/` directory and create corresponding `.yaml
 
 
 ## 2. Quick Start
+
+Two execution modes:
+- (2A) Slurm mode: Default uses NCHC TWCC HPC environment, plug-and-play mode, execution environment is Singularity container.
+- (2B) Standalone mode: Execution environment recommends using conda environment, same package library as yolov9.
 
 ### 2A  Fully Automated Mode (Slurm Cluster)
 
@@ -180,6 +176,8 @@ Quickly test aggregation algorithms and training flows:
 ./src/run_unit_test.sh
 ```
 
+
+## 3. Validation & Extras
 
 ### 3.1 Model Validation
 
