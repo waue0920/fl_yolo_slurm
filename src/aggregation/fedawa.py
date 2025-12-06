@@ -150,7 +150,7 @@ def aggregate(client_weights, client_vectors, global_weights, T_weights_state=No
         
         # Ensure dimension alignment with the correct squeeze
         C_squeezed = C.squeeze(0)  # [num_clients,]
-        if C_squeezed.dim() == 0:  # scalar 的情況
+        if C_squeezed.dim() == 0:  # case of scalar
             C_squeezed = C_squeezed.unsqueeze(0)
         reg_loss = torch.sum(probability_train * C_squeezed)
         
@@ -166,7 +166,7 @@ def aggregate(client_weights, client_vectors, global_weights, T_weights_state=No
         
         # Ensure dimension alignment
         l2_distance_squeezed = l2_distance.squeeze(0)  # [num_clients,]
-        if l2_distance_squeezed.dim() == 0:  # scalar 的情況
+        if l2_distance_squeezed.dim() == 0:  # case of scalar
             l2_distance_squeezed = l2_distance_squeezed.unsqueeze(0)
         sim_loss = torch.sum(probability_train * l2_distance_squeezed)
         

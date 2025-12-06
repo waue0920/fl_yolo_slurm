@@ -19,7 +19,7 @@ EXPERIMENTS_BASE_DIR=$(dirname "$EXP_DIR")
 
 # --- 2. Environment and Path Setup ---
 source "${EXP_DIR}/env.sh"
-## 皆已定義於 ${EXP_DIR}/env.sh
+## All defined in ${EXP_DIR}/env.sh
 # DATASET_NAME
 # CLIENT_NUM
 # TOTAL_ROUNDS

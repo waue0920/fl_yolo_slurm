@@ -1,54 +1,54 @@
-# 手動執行標準作業程序 (SOP)
+# Manual Standard Operating Procedure (SOP)
 
-本文件說明如何透過手動方式，一步步執行聯邦學習實驗。此方法提供最高的控制權，便於偵錯與詳細觀察。
+This document explains how to perform Federated Learning experiments step-by-step manually. This method offers maximum control, facilitating debugging and detailed observation.
 
-## 1. 產生標準作業程序 (SOP) 腳本
+## 1. Generate Standard Operating Procedure (SOP) Script
 
-首先，使用 `orchestrate.sh` 腳本並加上 `--manual` 旗標，即可產生一個包含實驗所需所有指令的 Shell 腳本。建議將輸出重新導向到一個檔案，例如 `sop.sh`。
+First, use the `orchestrate.sh` script with the `--manual` flag to generate a Shell script containing all necessary commands for the experiment. It is recommended to redirect the output to a file, e.g., `sop.sh`.
 
-### 基本語法
+### Basic Syntax
 ```bash
 ./src/orchestrate.sh <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> --manual > sop.sh
 ```
 
-### 參數說明
-- `DATASET_NAME`: 資料集名稱 (例如：kitti, cityscapes)
-- `CLIENT_NUM`: 客戶端數量 (例如：4)
-- `TOTAL_ROUNDS`: 聯邦學習輪次 (例如：2, 5)
-- `--manual`: **必要旗標**，用以生成手動執行的 SOP。
-- `--val`: 可選旗標，若加入，則產生的 SOP 中會包含模型驗證的步驟。
+### Parameters
+- `DATASET_NAME`: Dataset name (e.g., kitti, cityscapes)
+- `CLIENT_NUM`: Number of clients (e.g., 4)
+- `TOTAL_ROUNDS`: Federated learning rounds (e.g., 2, 5)
+- `--manual`: **Required flag** to generate manual SOP.
+- `--val`: Optional flag; if included, the generated SOP will include model validation steps.
 
-### 範例
+### Examples
 ```bash
-# 產生一個 kitti 資料集、4 個客戶端、2 輪學習的 SOP
+# Generate an SOP for kitti dataset, 4 clients, 2 rounds
 ./src/orchestrate.sh kitti 4 2 --manual > sop.sh
 
-# 產生一個 cityscapes 資料集、8 個客戶端、3 輪學習的 SOP，並包含驗證步驟
+# Generate an SOP for cityscapes dataset, 8 clients, 3 rounds, including validation steps
 ./src/orchestrate.sh cityscapes 8 3 --manual --val > cityscapes_sop.sh
 ```
 
-## 2. 檢視並執行 SOP 腳本
+## 2. Review and Execute SOP Script
 
-使用文字編輯器打開您剛剛產生的 `sop.sh` 檔案。您會看到所有指令都已經按照步驟和輪次整理好。
+Open your newly generated `sop.sh` file with a text editor. You will see all commands organized by steps and rounds.
 
-建議逐行或逐區塊複製到您的終端機中執行，以便在進入下一步前，檢查每一步的輸出結果。
+It is recommended to copy commands line-by-line or block-by-block into your terminal to execute, allowing you to check the output of each step before proceeding to the next.
 
-### 偵錯提示
-若要偵錯，您可以使用 `bash -x` 來執行 SOP 腳本，這將會顯示每個指令的詳細執行過程：
+### Debugging Tips
+To debug, you can run the SOP script using `bash -x`, which will show the detailed execution process of each command:
 ```bash
 bash -x sop.sh
 ```
 
-## 3. 手動執行流程概覽
+## 3. Manual Process Overview
 
-一個典型的 SOP 流程包含以下步驟：
+A typical SOP flow includes the following steps:
 
-1.  **設定環境變數**: 匯出後續指令所需的環境變數。
-2.  **資料準備**: 執行 `data_prepare.py` 來分割資料集。
-3.  **建立實驗目錄**: 為本次實驗建立所需的輸出檔案夾。
-4.  **第一輪：客戶端訓練**: 提交所有客戶端的訓練任務。
-5.  **第一輪：聯邦平均**: 等待所有客戶端訓練完成後，執行權重聚合。
-6.  ... (重複執行客戶端訓練與聯邦平均，直到所有輪次結束) ...
-7.  **(可選) 模型驗證**: 若您在產生 SOP 時加入了 `--val` 旗標，最後會有驗證模型的步驟。
+1.  **Set Environment Variables**: Export environment variables required for subsequent commands.
+2.  **Data Preparation**: Run `data_prepare.py` to partition the dataset.
+3.  **Create Experiment Directory**: Create necessary output folders for this experiment.
+4.  **Round 1: Client Training**: Submit training tasks for all clients.
+5.  **Round 1: Federated Averaging**: Wait for all clients to finish training, then execute weight aggregation.
+6.  ... (Repeat Client Training and Federated Averaging until all rounds are finished) ...
+7.  **(Optional) Model Validation**: If the `--val` flag was added when generating the SOP, a model validation step will be included at the end.
 
-遵循此程序，您便能精準地控制整個聯邦學習流程。
+By following this procedure, you can precisely control the entire Federated Learning flow.

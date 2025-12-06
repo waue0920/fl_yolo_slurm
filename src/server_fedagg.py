@@ -28,7 +28,7 @@ if 'WROOT' in os.environ:
 
 def calculate_alg_complexity(algorithm=None, template_model=None, expected_clients=None, start_time=None):
     """
-    計算聚合演算法的空間與通訊複雜度
+    Calculate space and communication complexity of the aggregation algorithm
     """
     BYTE = 8
     elapsed = None
@@ -39,42 +39,42 @@ def calculate_alg_complexity(algorithm=None, template_model=None, expected_clien
 
     print(f"[SUMMARY]({algorithm}) Aggregation time (s): {elapsed:.3f}")
 
-    # 基礎：Server 需要暫存 N 個客戶端權重
+    # Base: Server needs to store N client weights
     base_server_bits = param_bits * expected_clients  # NP
-    communication_bits = param_bits * expected_clients * 2  # 上傳 + 下載
+    communication_bits = param_bits * expected_clients * 2  # Upload + Download
 
     if algorithm == 'fedopt':
-        # Server 額外需要：global_weights(P) + momentum(P) + variance(P) = 3P
+        # Server needs extra: global_weights(P) + momentum(P) + variance(P) = 3P
         server_state_bits = param_bits * 3
         total_server_bits = base_server_bits + server_state_bits  # NP + 3P
         print(f"[SUMMARY]({algorithm}) SpaceComplexity <(N+3)P> (bit): {total_server_bits:,}")
         print(f"[SUMMARY]({algorithm}) CommunicationComplexity <2NP> (bit): {communication_bits:,}")
     elif algorithm == 'fedavgm':
-        # Server 額外需要：global_weights(P) + server_momentum(P) = 2P  
+        # Server needs extra: global_weights(P) + server_momentum(P) = 2P  
         server_state_bits = param_bits * 2
         total_server_bits = base_server_bits + server_state_bits  # NP + 2P
         print(f"[SUMMARY]({algorithm}) SpaceComplexity <(N+2)P> (bit): {total_server_bits:,}")
         print(f"[SUMMARY]({algorithm}) CommunicationComplexity <2NP> (bit): {communication_bits:,}")
     elif algorithm == 'fedprox':
-        # Server 額外需要：global_weights(P) = 1P
+        # Server needs extra: global_weights(P) = 1P
         server_state_bits = param_bits
         total_server_bits = base_server_bits + server_state_bits  # NP + 1P
         print(f"[SUMMARY]({algorithm}) SpaceComplexity <(N+1)P> (bit): {total_server_bits:,}")
         print(f"[SUMMARY]({algorithm}) CommunicationComplexity <2NP> (bit): {communication_bits:,}")
     elif algorithm == 'fednova':
-        # Server 額外需要：global_weights(P) + client_steps(N*32 bits) ≈ 1P
+        # Server needs extra: global_weights(P) + client_steps(N*32 bits) ≈ 1P
         server_state_bits = param_bits 
         total_server_bits = base_server_bits + server_state_bits  # NP + 1P + N
         print(f"[SUMMARY]({algorithm}) SpaceComplexity <(N+1)P> (bit): {total_server_bits:,}")
         print(f"[SUMMARY]({algorithm}) CommunicationComplexity <2NP> (bit): {communication_bits:,}")
     elif algorithm == 'fedyoga':
-        # Server 額外需要：global_weights(P) + client_history(N²P) + metadata(N*32)
+        # Server needs extra: global_weights(P) + client_history(N²P) + metadata(N*32)
         server_state_bits = param_bits + expected_clients**2 * param_bits 
         total_server_bits = base_server_bits + server_state_bits  # (N+1+N²)P
         print(f"[SUMMARY]({algorithm}) SpaceComplexity <(N+1+N²)P> (bit): {total_server_bits:,}")
         print(f"[SUMMARY]({algorithm}) CommunicationComplexity <2NP> (bit): {communication_bits:,}")
     else:
-        # 一般算法：Server 額外需要 global_weights(P) = 1P
+        # General algorithm: Server needs extra global_weights(P) = 1P
         server_state_bits = param_bits
         total_server_bits = base_server_bits + server_state_bits  # NP + 1P
         print(f"[SUMMARY]({algorithm}) SpaceComplexity <(N+1)P> (bit): {total_server_bits:,}")
@@ -254,33 +254,33 @@ def federated_aggregate(input_dir: Path, output_file: Path, expected_clients: in
         exit(1)
     print(f"\nAggregating weights using {algorithm}...")
     
-    # 根據演算法型態呼叫並處理返回值
+    # Call and handle return values based on algorithm type
     if algorithm == 'fedopt':
-        # FedOpt 返回 (aggregated_weights, optimizer_state)
+        # FedOpt returns (aggregated_weights, optimizer_state)
         aggregated, optimizer_state = agg_fn(all_state_dicts, **agg_kwargs)
-        # 保存 optimizer_state 供下一轮使用
+        # Save optimizer_state for next round
         opt_state_path = input_dir / f"fedopt_state.pt"
         torch.save(optimizer_state, opt_state_path)
         print(f"[INFO] Saved FedOpt optimizer state to: {opt_state_path}")
     elif algorithm == 'fedavgm':
-        # FedAvgM 返回 (aggregated_weights, server_momentum)
+        # FedAvgM returns (aggregated_weights, server_momentum)
         aggregated, server_momentum = agg_fn(all_state_dicts, **agg_kwargs)
     elif algorithm == 'fedawa':
-        # FedAWA 返回 (aggregated_weights, T_weights_state)
+        # FedAWA returns (aggregated_weights, T_weights_state)
         aggregated, T_weights_state = agg_fn(all_state_dicts, **agg_kwargs)
-        # 保存 T_weights_state 供下一轮使用
+        # Save T_weights_state for next round
         t_weights_path = input_dir / f"fedawa_state.pt"
         torch.save(T_weights_state, t_weights_path)
         print(f"[INFO] Saved FedAWA T_weights state to: {t_weights_path}")
     elif algorithm == 'fedyoga':
-        # FedYOGA 返回 (aggregated_weights, T_weights_state)
+        # FedYOGA returns (aggregated_weights, T_weights_state)
         aggregated, T_weights_state = agg_fn(all_state_dicts, **agg_kwargs)
-        # 保存 T_weights_state 供下一轮使用
+        # Save T_weights_state for next round
         t_weights_path = input_dir / f"fedyoga_state.pt"
         torch.save(T_weights_state, t_weights_path)
         print(f"[INFO] Saved FedYOGA T_weights state to: {t_weights_path}")
     else:
-        # 其他演算法返回 aggregated_weights dict
+        # Other algorithms return aggregated_weights dict
         aggregated = agg_fn(all_state_dicts, **agg_kwargs)
     
     print("Aggregation complete.")
@@ -319,12 +319,12 @@ if __name__ == "__main__":
     parser.add_argument('--expected-clients', type=int, required=True, help="The number of client models expected to be in the input directory.")
     parser.add_argument('--round', type=int, required=True, help="Round number to filter client weights (e.g., 1, 2, 3, ...).")
     parser.add_argument('--algorithm', type=str, default='fedavg', choices=AGGREGATORS.keys(), help="Aggregation algorithm to use.")
-    # 可擴充：parser.add_argument('--mu', type=float, default=0.01, help="FedProx mu value")
+    # Extensible: parser.add_argument('--mu', type=float, default=0.01, help="FedProx mu value")
     args = parser.parse_args()
 
     server_fedprox_mu_env = os.environ.get('SERVER_FEDPROX_MU')
 
-    # 需要先載入 template_model 以取得權重結構
+    # Need to load template_model first to get weight structure
     client_weights_pattern = str(args.input_dir / f"r{args.round}_c*" / "weights" / "best.pt")
     client_weights_paths = sorted(glob.glob(client_weights_pattern))
     if not client_weights_paths:
@@ -337,7 +337,7 @@ if __name__ == "__main__":
         print("Error: aggregation requires a model object in checkpoint.")
         exit(1)
 
-    # 各演算法額外參數準備
+    # Prepare extra parameters for each algorithm
     agg_kwargs = {}
     
     if args.algorithm == 'fedprox':
@@ -353,11 +353,11 @@ if __name__ == "__main__":
     
     if args.algorithm == 'fednova':
         agg_kwargs['server_weights'] = template_model.state_dict()
-        agg_kwargs['client_steps'] = [1] * args.expected_clients  # 可改為真實步數
+        agg_kwargs['client_steps'] = [1] * args.expected_clients  # Can change to real steps
     
     if args.algorithm == 'fedopt':
         agg_kwargs['global_weights'] = template_model.state_dict()
-        # 載入前一輪的 optimizer_state (若存在)
+        # Load previous round's optimizer_state (if exists)
         if args.round > 1:
             opt_state_path = args.input_dir / f"fedopt_state.pt"
             if opt_state_path.exists():
@@ -376,7 +376,7 @@ if __name__ == "__main__":
     
     if args.algorithm == 'fedawa':
         agg_kwargs['global_weights'] = template_model.state_dict()
-        # 载入前一轮的 T_weights 状态 (若存在)
+        # Load previous round's T_weights state (if exists)
         if args.round > 1:
             t_weights_path = args.input_dir / f"fedawa_state.pt"
             if t_weights_path.exists():
@@ -390,7 +390,7 @@ if __name__ == "__main__":
     
     if args.algorithm == 'fedyoga':
         agg_kwargs['global_weights'] = template_model.state_dict()
-        # 载入前一轮的 T_weights 状态 (若存在)
+        # Load previous round's T_weights state (if exists)
         if args.round > 1:
             t_weights_path = args.input_dir / f"fedyoga_state.pt"
             if t_weights_path.exists():

@@ -9,8 +9,8 @@
 #SBATCH --output=experiments/slurm.out
 #SBATCH --error=experiments/slurm.out
 
-### 參數設定
-# 參數集中於 env.sh，僅需 source 一次
+### Settings
+# Parameters are in env.sh, source once
 source "./src/env.sh"
 
 # ===================================================================================
@@ -26,13 +26,13 @@ RUN_COUNT=$(find "${EXPERIMENTS_BASE_DIR}" -maxdepth 1 -type d | wc -l)
 RUN_NUM=$((RUN_COUNT))
 export EXP_ID="${RUN_NUM}_${DATASET_NAME}_${CLIENT_NUM}C_${TOTAL_ROUNDS}R_${TIMESTAMP}"
 
-# === 紀錄本次實驗的 env.sh ===
+# === Log env.sh for this experiment ===
 echo "========== env.sh content =========="
 cat ./src/env.sh
 echo "===================================="
 
 
-# 啟動 fl 訓練，將 EXP_ID 一併傳遞給 orchestrate.sh
+# Start FL training, pass EXP_ID to orchestrate.sh
 bash "${WROOT}/src/orchestrate.sh" "$DATASET_NAME" "$CLIENT_NUM" "$TOTAL_ROUNDS" --val --manual >> ./experiments/sop.sh
 bash "${WROOT}/src/orchestrate.sh" "$DATASET_NAME" "$CLIENT_NUM" "$TOTAL_ROUNDS"
 
@@ -40,7 +40,7 @@ cd "${WROOT}"
 echo "#################"
 echo "# Start validation..."
 echo "#################"
-# 驗證階段
+# Validation Phase
 if singularity exec --nv --bind "${WROOT}":"${WROOT}" \
     "${SINGULARITY_IMG}" \
     python3 "${WROOT}/src/validate_federated_model.py" \

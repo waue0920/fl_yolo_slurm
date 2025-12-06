@@ -92,36 +92,36 @@ def run_validation(model_path, data_config, output_dir, model_name="model", devi
     # Metrics
     conf_thres, iou_thres = 0.001, 0.6
     stats, seen = [], 0
-    # 使用資料集配置檔案的類別定義，而不是模型的
-    names = data_dict['names']  # 從 yaml 檔案載入
+    # Use class definitions from dataset config file, not the model's
+    names = data_dict['names']  # Load from yaml file
     nc = len(names)  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
     
-    # 準備統計數據收集
+    # Prepare statistics collection
     jdict, stats, ap, ap_class = [], [], [], []
     
-    # 資料集類別統計收集
+    # Dataset class statistics collection
     target_class_counts = np.zeros(nc, dtype=int)
     target_classes_present = set()
     
     # Iterate batches
     for batch_i, (imgs, targets, paths, shapes) in enumerate(dataloader):
-        imgs = imgs.to(device).float() / 255.0  # 正規化到 0-1
+        imgs = imgs.to(device).float() / 255.0  # Normalize to 0-1
         nb, _, height, width = imgs.shape  # batch size, channels, height, width
         
         with torch.no_grad():
-            # 推論
+            # Inference
             pred = model(imgs)
-            # 處理 DetectMultiBackend 可能返回 list 的情況
+            # Handle case where DetectMultiBackend might return a list
             if isinstance(pred, list):
-                pred = pred[0]  # 取第一個輸出（通常是主要的預測結果）
+                pred = pred[0]  # Take the first output (usually the main prediction)
             
             # NMS
             targets[:, 2:] *= torch.tensor((width, height, width, height))  # to pixels
             pred = non_max_suppression(pred, conf_thres, iou_thres, labels=[], multi_label=True, agnostic=False)
 
-        # 處理每張圖片的預測結果
+        # Process predictions for each image
         for si, pred_img in enumerate(pred):
             labels = targets[targets[:, 0] == si, 1:]
             nl = len(labels)
@@ -130,7 +130,7 @@ def run_validation(model_path, data_config, output_dir, model_name="model", devi
             shape = shapes[si][0]
             seen += 1
             
-            # 統計實際的 target classes
+            # Count actual target classes
             for cls_idx in tcls:
                 cls_idx = int(cls_idx)
                 if 0 <= cls_idx < nc:
@@ -142,9 +142,9 @@ def run_validation(model_path, data_config, output_dir, model_name="model", devi
                     stats.append((torch.zeros(0, niou, dtype=torch.bool), torch.Tensor(), torch.Tensor(), tcls))
                 continue
 
-            # 預測結果 - 過濾無效類別
+            # Predictions - Filter invalid classes
             predn = pred_img.clone()
-            # 只保留在資料集類別範圍內的預測 (0 到 nc-1)
+            # Only keep predictions within dataset class range (0 to nc-1)
             valid_mask = (predn[:, 5] >= 0) & (predn[:, 5] < nc)
             predn = predn[valid_mask]
             
@@ -153,11 +153,11 @@ def run_validation(model_path, data_config, output_dir, model_name="model", devi
                     stats.append((torch.zeros(0, niou, dtype=torch.bool), torch.Tensor(), torch.Tensor(), tcls))
                 continue
             
-            # 計算 metrics
+            # Calculate metrics
             if nl:
                 tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-                # 確保所有 tensor 都在同一個 device 上
+                # Ensure all tensors are on the same device
                 labelsn = labelsn.to(device)
                 predn = predn.to(device)
                 iouv = iouv.to(device)
@@ -165,10 +165,10 @@ def run_validation(model_path, data_config, output_dir, model_name="model", devi
             else:
                 correct = torch.zeros(predn.shape[0], niou, dtype=torch.bool)
             
-            # 確保統計數據的長度一致 - 使用過濾後的 predn
+            # Ensure measurement statistics length - uses filtered predn
             stats.append((correct.cpu(), predn[:, 4].cpu(), predn[:, 5].cpu(), tcls))
 
-    # 計算指標
+    # Calculate metrics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
         tp, fp, p, r, f1, ap, ap_class = ap_per_class(*stats, plot=False, save_dir="", names=names)
@@ -180,7 +180,7 @@ def run_validation(model_path, data_config, output_dir, model_name="model", devi
         mp, mr, map50, map75, map = 0.0, 0.0, 0.0, 0.0, 0.0
         ap, ap_class = [], []
 
-    # 收集詳細指標
+    # Collect detailed metrics
     metrics = {
         'mAP@0.5': float(map50),
         'mAP@0.75': float(map75), 
@@ -199,7 +199,7 @@ def run_validation(model_path, data_config, output_dir, model_name="model", devi
         }
     }
     
-    # 分析缺失的類別
+    # Analyze missing classes
     missing_classes = []
     for class_idx in range(nc):
         if class_idx not in target_classes_present:
@@ -214,17 +214,17 @@ def run_validation(model_path, data_config, output_dir, model_name="model", devi
             })
     metrics['dataset_analysis']['missing_classes'] = missing_classes
     
-    # 初始化所有類別的 AP 為 0
+    # Initialize all class APs to 0
     for class_idx, class_name in enumerate(names):
         metrics['per_class_ap50'][class_name] = 0.0
         metrics['per_class_ap75'][class_name] = 0.0
         metrics['per_class_ap'][class_name] = 0.0
     
-    # 更新有實際 AP 值的類別
+    # Update classes with actual AP values
     if len(ap) and len(ap_class):
         for i, c in enumerate(ap_class):
             class_idx = int(c)
-            # 確保類別索引在有效範圍內
+            # Ensure class index is within valid range
             if 0 <= class_idx < len(names):
                 class_name = names[class_idx]
                 metrics['per_class_ap50'][class_name] = float(ap50[i]) if i < len(ap50) else 0.0
@@ -295,28 +295,28 @@ def summary_results(results_dict, output_dir, class_names=None, dataset_info=Non
     with open(summary_file, 'w') as f:
         
         
-        # 資料集分析部分（如果提供了資料集資訊）
+        # Dataset analysis section (if dataset info provided)
         if dataset_info:
             f.write("\n### Dataset Analysis ###\n")
-            f.write(f"資料集定義：{dataset_info['nc']} 個類別 {dataset_info['class_names_list']}\n\n")
-            f.write("實際驗證集內容：\n")
+            f.write(f"Dataset Definition: {dataset_info['nc']} classes {dataset_info['class_names_list']}\n\n")
+            f.write("Actual Validation Set Content:\n")
             
-            # 顯示每個類別的樣本數量
+            # Show sample count for each class
             for class_idx in range(dataset_info['nc']):
                 count = dataset_info['target_class_counts'][class_idx]
                 class_name = dataset_info['class_names_list'][class_idx] if class_idx < len(dataset_info['class_names_list']) else f"class_{class_idx}"
                 status = "✓" if count > 0 else "✗"
                 f.write(f"{status} Class {class_idx} ({class_name}): {count:,} samples\n")
             
-            # 顯示缺失類別摘要
+            # Show missing classes summary
             if dataset_info['missing_classes']:
-                f.write(f"\n缺失的類別：{', '.join(dataset_info['missing_classes'])} ({len(dataset_info['missing_classes'])}/{dataset_info['nc']} 類別缺失)\n")
+                f.write(f"\nMissing Classes: {', '.join(dataset_info['missing_classes'])} ({len(dataset_info['missing_classes'])}/{dataset_info['nc']} classes missing)\n")
             else:
-                f.write(f"\n✓ 所有 {dataset_info['nc']} 個定義的類別都有驗證樣本\n")
+                f.write(f"\n✓ All {dataset_info['nc']} defined classes have validation samples\n")
             
             f.write("\n" + "="*60 + "\n\n")
         
-        # 整體指標表格
+        # Overall Metrics Table
         f.write("### Federated Learning Model Validation Summary ###\n\n")
 
         f.write(f"{'Model':<15} {'mAP@0.5':<10} {'mAP@0.75':<10} {'mAP@0.5:0.95':<12} {'Precision':<10} {'Recall':<10}\n")
@@ -350,13 +350,13 @@ def summary_results(results_dict, output_dir, class_names=None, dataset_info=Non
         
         f.write("\n")
         
-        # 每類別 mAP@0.5 表格
+        # Per-class mAP@0.5 Table
         f.write("=== Per-Class mAP@0.5 ===\n")
-        # 使用完整的類別列表，確保顯示所有類別（包括 AP=0 的）
+        # Use full class list, ensuring all classes are shown (including AP=0)
         if class_names:
             names_to_show = class_names
         else:
-            # 如果沒有提供類別名稱，則從結果中收集
+            # If no class names provided, collect from results
             all_classes = set()
             for metrics in results_dict.values():
                 if metrics and 'per_class_ap50' in metrics:
@@ -366,7 +366,7 @@ def summary_results(results_dict, output_dir, class_names=None, dataset_info=Non
             names_to_show = sorted(list(all_classes))
         
         if names_to_show:
-            # 表格標頭
+            # Table header
             header = f"{'Model':<15}"
             for cls_name in names_to_show:
                 header += f"{cls_name:<12}"
@@ -386,7 +386,7 @@ def summary_results(results_dict, output_dir, class_names=None, dataset_info=Non
                 else:
                     return (2, name)
             
-            # 每個模型的數據
+            # Data for each model
             for model_name in sorted(results_dict.keys(), key=sort_key):
                 metrics = results_dict[model_name]
                 if metrics and 'per_class_ap50' in metrics:
@@ -397,10 +397,10 @@ def summary_results(results_dict, output_dir, class_names=None, dataset_info=Non
                     f.write(row + "\n")
             f.write("\n")
         
-        # 每類別 mAP@0.5:0.95 表格
+        # Per-class mAP@0.5:0.95 Table
         f.write("=== Per-Class mAP@0.5:0.95 ===\n")
         if names_to_show:
-            # 表格標頭
+            # Table header
             header = f"{'Model':<15}"
             for cls_name in names_to_show:
                 header += f"{cls_name:<12}"
@@ -420,7 +420,7 @@ def summary_results(results_dict, output_dir, class_names=None, dataset_info=Non
                 else:
                     return (2, name)
             
-            # 每個模型的數據
+            # Data for each model
             for model_name in sorted(results_dict.keys(), key=sort_key):
                 metrics = results_dict[model_name]
                 if metrics and 'per_class_ap' in metrics:
@@ -525,7 +525,7 @@ def main():
     else:
         class_names = list(data_dict['names'])
     
-    # 快速載入資料集來分析類別分布（只收集資料，不顯示）
+    # Quickly load dataset to analyze class distribution (collect data only, no display)
     dataset_info = None
     try:
         dataloader, dataset = create_dataloader(
@@ -536,13 +536,13 @@ def main():
         names = data_dict['names']
         nc = len(names)
         
-        # 準備類別名稱列表
+        # Prepare class name list
         if isinstance(names, dict):
             class_names_list = [names[i] for i in sorted(names.keys())]
         else:
             class_names_list = list(names)
         
-        # 統計類別分布
+        # Statistic class distribution
         target_class_counts = np.zeros(nc, dtype=int)
         target_classes_present = set()
         
@@ -553,7 +553,7 @@ def main():
                     target_class_counts[cls_idx] += 1
                     target_classes_present.add(cls_idx)
         
-        # 分析缺失類別
+        # Analyze missing classes
         missing_classes = []
         for class_idx in range(nc):
             if class_idx not in target_classes_present:
@@ -563,7 +563,7 @@ def main():
                     class_name = names[class_idx] if class_idx < len(names) else f"class_{class_idx}"
                 missing_classes.append(class_name)
         
-        # 收集資料集資訊供後續使用
+        # Collect dataset info for later use
         dataset_info = {
             'nc': nc,
             'class_names_list': class_names_list,
@@ -572,7 +572,7 @@ def main():
         }
         
     except Exception as e:
-        print(f"無法分析資料集類別分布: {e}")
+        print(f"Unable to analyze dataset class distribution: {e}")
         print()
     
     # Run validation for each model

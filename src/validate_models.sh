@@ -59,8 +59,8 @@ run_validator() {
     echo "Validating model: $model_path -> $outdir"
     # choose data config based on DATASET_NAME from env.sh if present
     if [ -n "${DATASET_NAME:-}" ]; then
-        # 移除 Non-IID 後綴 (A010, A100 等) 來找到對應的資料集配置
-        # 例如: kittiOA010 -> kittiO, bdd100kA010 -> bdd100k
+        # Remove Non-IID suffix (A010, A100 etc) to find corresponding dataset config
+        # Example: kittiOA010 -> kittiO, bdd100kA010 -> bdd100k
         DATASET_BASE=$(echo "$DATASET_NAME" | sed 's/A[0-9]\{3\}$//')
         DATA_CFG="$WROOT/data/${DATASET_BASE}.yaml"
         if [ ! -f "$DATA_CFG" ]; then

@@ -15,28 +15,34 @@
 # Usage: sbatch src/run.sb <DATASET_NAME> <CLIENT_NUM> <TOTAL_ROUNDS> [--val]
 # ex :
 # sbatch src/run.sb kitti 4 5
-# sbatch src/run.sb cityscapes 4 5 --val
-# ===================================================================================
+# Use SLURM_SUBMIT_DIR if valid, otherwise current directory
+WORK_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
 
-export WROOT="/home/waue0920/waue/git/fl_yolo_slurm"
+# Source env.sh to get WROOT and other variables
+# Assumes the script is run from project root or src/env.sh is available relative to WORK_DIR
+if [ -f "${WORK_DIR}/src/env.sh" ]; then
+    source "${WORK_DIR}/src/env.sh"
+elif [ -f "./src/env.sh" ]; then
+    source "./src/env.sh"
+else
+    echo "Error: src/env.sh not found. Please run sbatch from the project root."
+    exit 1
+fi
 
-set -e
-set -o pipefail
-
-### 主邏輯說明
-## (登入節點 ln )
-## 1. 執行 sbatch run.sb
-## 2. 跟slurm 要了一個工作節點 w1
-## (工作節點 w1)
-## 3. 在工作節點上，做分資料集的檢查
-## 4. 開始執行每一round 迴圈
-##   4.1 client_train.sh 的邏輯，假設有四個 client ，因此從 w1 平行發出四個 sbatch train job ，
-## 假設每個sbatch job 都個要一個 node ，即 {w2, w3, w4, w5}
-##   4.2 (工作節點 w2) c1 訓練 ;  (工作節點 w3) c2 訓練 ;  (工作節點 w4) c3 訓練 ;  (工作節點 w5) c4 訓練
-##   4.3 (工作節點 w1) 會等到所有job 都算完，才開始做 fl 的 aggregate ，也就是你剛剛改的那段。
-## 5. 這個 round 結束
-## 6. 看是否執行 validation ...
-### 說明結束
+### Logic Explanation
+## (Login Node ln)
+## 1. Execute sbatch run.sb
+## 2. Request a worker node w1 from Slurm
+## (Worker Node w1)
+## 3. On worker node, check dataset partitioning
+## 4. Start loop for each round
+##   4.1 Logic of client_train.sh: Assuming 4 clients, submit 4 sbatch train jobs in parallel from w1
+##       Assuming each sbatch job requests one node, i.e., {w2, w3, w4, w5}
+##   4.2 (Worker Node w2) c1 train; (w3) c2 train; (w4) c3 train; (w5) c4 train
+##   4.3 (Worker Node w1) Waits for all jobs to finish, then starts FL aggregation.
+## 5. End of this round
+## 6. Check if validation runs...
+### End Explanation
 
 # --- 1. Argument Parsing ---
 VALIDATION_ENABLED=false
@@ -92,16 +98,16 @@ echo "######################################################################"
 
 echo -e "\n--- STEP 1: Preparing data for ${CLIENT_NUM} clients... ---"
 ##################
-# FL 1 分割資料集
+# FL 1 Dataset Partitioning
 ##################
-# 這邊也要改在 container 內執行，以免遇到 worker node 上的 pyhon 環境函式庫找不到的問題
+# Must run in container to avoid missing python libs on worker node
 singularity exec --nv --bind "${WROOT}":"${WROOT}" \
     "${SINGULARITY_IMG}" \
     python3 "${SRC_DIR}/data_prepare.py" --dataset-name "${DATASET_NAME}" \
     --num-clients "${CLIENT_NUM}"
 echo "--- Data preparation step complete. ---"
 
-# ROUND 的迴圈，要確保邏輯正確
+# Ensure loop logic for ROUND is correct
 echo -e "\n--- STEP 2: Starting Federated Learning Rounds... ---"
 for r in $(seq 1 ${TOTAL_ROUNDS}); do
     echo -e "\n==================[ ROUND ${r} / ${TOTAL_ROUNDS} ]=================="
@@ -114,7 +120,7 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
     echo "Using weights for this round: ${current_weights}"
 
     ##################
-    # FL 2 Client 端分散式訓練
+    # FL 2 Client Side Distributed Training
     ##################
     client_job_ids=""
     for c in $(seq 1 ${CLIENT_NUM}); do
@@ -123,10 +129,10 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
         PROJECT_OUT="${EXP_DIR}/client_outputs/${EXP_ID}"
         NAME_OUT="r${r}_c${c}"
 
-        # [錯誤範例] 
-        # 曾經嘗試用 sbatch --wrap 來提交 client job，但發現python3在哪裡都不知道
-        # 秀 FATAL: python3: executable file not found in $PATH
-        # [正確用法] 改回使用 sbatch 執行 client_train.sh 提交 client job
+        # [Error Example]
+        # Tried using sbatch --wrap to submit client job, but python3 was not found
+        # Shows FATAL: python3: executable file not found in $PATH
+        # [Correct Usage] Switch back to sbatch executing client_train.sh to submit client job
         echo "Using weights for this round: ${current_weights}"
 
         # Submit all client jobs for the current round in parallel
@@ -159,30 +165,19 @@ for r in $(seq 1 ${TOTAL_ROUNDS}); do
     echo ">> Submitting federated averaging job, which will run after clients finish."
 
     ##################
-    # FL 3 Server 端聚合
+    # FL 3 Server Side Aggregation
     ##################
-    # [錯誤範例] 這樣寫會導致 server aggregation 沒有在 Singularity container 內執行，
-    # 會遇到 Python module (如 torch) 找不到的問題：
+    # [Error Example] This causes server aggregation not to run in Singularity container,
+    # leading to missing Python modules (like torch):
     # srun --dependency=afterok:${dependency_list} \
     #     python3 "${SRC_DIR}/server_fedavg.py" \
-    #     --input-dir "${EXP_DIR}/client_outputs/${EXP_ID}" \
-    #     --output-file "${EXP_DIR}/aggregated_weights/w_s_r${r}.pt" \
-    #     --expected-clients "${CLIENT_NUM}" \
-    #     --round "${r}" \
-    #     > "${EXP_DIR}/fed_avg_logs/round_${r}.out" 2> "${EXP_DIR}/fed_avg_logs/round_${r}.err"
-    # [錯誤用法] 以下 singularity exec 包起來，確保在 container 內執行，卻不能保證他會等 client job，終究是失敗的做法..
+    #     ...
+    # [Error Usage] Wrapping in singularity exec below ensures execution in container, but doesn't guarantee waiting for client job...
     # srun --dependency=afterok:${dependency_list} \
     #     singularity exec --nv --bind "${WROOT}":"${WROOT}" \
-    #     "${SINGULARITY_IMG}" \
-    #     python3 "${WROOT}/src/server_fedavg.py" \
-    #     --input-dir "${WROOT}/${EXP_DIR}/client_outputs/${EXP_ID}" \
-    #     --output-file "${WROOT}/${EXP_DIR}/aggregated_weights/w_s_r${r}.pt" \
-    #     --expected-clients "${CLIENT_NUM}" \
-    #     --round "${r}" \
-    #     > "${EXP_DIR}/fed_avg_logs/round_${r}.out" 2> "${EXP_DIR}/fed_avg_logs/round_${r}.err"
-    # echo "--> Federated averaging for Round ${r} complete."
-    # [正確用法] 應該用 sbatch 提交一個新的相依任務，並使用 --wait 等待其完成。
-    # 這樣 run.sb 這個 orchestrator job 就會暫停，直到 aggregation job 結束。
+    #     ...
+    # [Correct Usage] Should use sbatch to submit a new dependent job, and use --wait to wait for it.
+    # This keeps run.sb orchestrator job paused until aggregation job finishes.
     "${SRC_DIR}/fl_server_fedavg.sh" \
         "${WROOT}/${EXP_DIR}" \
         "${WROOT}" \
@@ -197,14 +192,14 @@ done
 
 
 ##################
-# FL 4 Server 端驗證
+# FL 4 Server Side Validation
 ##################
 
 if [ "$VALIDATION_ENABLED" = true ]; then
     echo -e "\n--- STEP 3: Running Model Validation ---"
     echo ">> Validating all models (baseline + ${TOTAL_ROUNDS} rounds)..."
-    # [錯誤範例] 這樣寫會導致 validation 沒有在 Singularity container 內執行，
-    # 會遇到 Python module (如 torch) 找不到的問題：
+    # [Error Example] This causes validation not to run in Singularity container,
+    # leading to missing Python modules (like torch):
     # if python3 "${SRC_DIR}/validate_federated_model.py" \
     #     --experiment-dir "${WROOT}/${EXP_DIR}" \
     #     --data-config "data/${DATASET_NAME}.yaml" \
@@ -216,7 +211,7 @@ if [ "$VALIDATION_ENABLED" = true ]; then
     #     VALIDATION_MSG="##  Validation: Failed (see logs above)"
     # fi
 
-    # [正確範例] 應該用 singularity exec 包起來，確保在 container 內執行：
+    # [Correct Example] Wrap in singularity exec to ensure execution in container:
     if singularity exec --nv --bind "${WROOT}":"${WROOT}" \
         "${SINGULARITY_IMG}" \
         python3 "${WROOT}/src/validate_federated_model.py" \

@@ -10,15 +10,15 @@ from pathlib import Path
 
 def split_data_dirichlet(images_list, labels_list, client_num, alpha):
     """
-    使用 Dirichlet 分布進行 Non-IID 資料分割
+    Perform Non-IID data splitting using Dirichlet distribution.
     
-    這是一個獨立實現，不依賴 FedML，避免不必要的依賴問題。
+    This is an independent implementation, not relying on FedML, to avoid unnecessary dependencies.
     
     Args:
-        images_list: 圖片文件名列表
-        labels_list: 對應的類別標籤列表
-        client_num: 客戶端數量
-        alpha: Dirichlet 參數（越小越不均勻）
+        images_list: List of image filenames
+        labels_list: List of corresponding class labels
+        client_num: Number of clients
+        alpha: Dirichlet parameter (smaller means less uniform)
     
     Returns:
         client_dict: {client_id: [image_filenames]}
@@ -26,47 +26,47 @@ def split_data_dirichlet(images_list, labels_list, client_num, alpha):
     labels_array = np.array(labels_list)
     num_classes = len(np.unique(labels_array))
     
-    # 為每個類別建立索引字典
+    # Build index dict for each class
     class_indices = {}
     for label in np.unique(labels_array):
         class_indices[label] = np.where(labels_array == label)[0].tolist()
     
-    # 初始化每個客戶端的索引列表
+    # Initialize index list for each client
     client_indices = [[] for _ in range(client_num)]
     
-    # 對每個類別使用 Dirichlet 分布
+    # Use Dirichlet distribution for each class
     for label, indices in class_indices.items():
         np.random.shuffle(indices)
         
-        # 生成 Dirichlet 分布的比例
+        # Generate Dirichlet proportions
         proportions = np.random.dirichlet(np.repeat(alpha, client_num))
         
-        # 計算每個客戶端應該分配到的樣本數
+        # Calculate sample count for each client
         counts = (proportions * len(indices)).astype(int)
         
-        # 修正四捨五入造成的總數偏差
+        # Correct total count deviation due to rounding
         diff = len(indices) - counts.sum()
         if diff > 0:
-            # 補給比例最大的前 diff 個客戶端
+            # Add to the top diff clients with largest proportions
             top_clients = np.argsort(proportions)[-diff:]
             for client_id in top_clients:
                 counts[client_id] += 1
         elif diff < 0:
-            # 從數量最多的客戶端中減少
+            # Reduce from the client with the most samples
             for _ in range(abs(diff)):
                 valid_clients = np.where(counts > 0)[0]
                 if len(valid_clients) > 0:
                     client_to_reduce = valid_clients[np.argmax(counts[valid_clients])]
                     counts[client_to_reduce] -= 1
         
-        # 分配索引給各客戶端
+        # Assign indices to clients
         start_idx = 0
         for client_id in range(client_num):
             end_idx = start_idx + counts[client_id]
             client_indices[client_id].extend(indices[start_idx:end_idx])
             start_idx = end_idx
     
-    # 轉換為 {client_id: [image_filenames]} 格式
+    # Convert to {client_id: [image_filenames]} format
     client_dict = {}
     for client_id, indices in enumerate(client_indices):
         np.random.shuffle(indices)
@@ -123,11 +123,11 @@ def prepare_data(
         train_subdir = "train"  # Standard datasets use train
         
     if output_dir is None:
-        # Alpha >= 100 視為 IID，< 100 為 Non-IID
+        # Alpha >= 100 is considered IID, < 100 is Non-IID
         if lda_alpha >= 100.0:
             out_name = f"{dataset_name}_{num_clients}"
         else:
-            # 格式化 alpha 值（例如 0.1 -> A010, 1.0 -> A100）
+            # Format alpha value (e.g. 0.1 -> A010, 1.0 -> A100)
             alpha_str = ("%.2f" % lda_alpha).replace(".", "")
             out_name = f"{dataset_name}A{alpha_str}_{num_clients}"
         output_dir = project_root / "federated_data" / out_name
@@ -162,18 +162,18 @@ def prepare_data(
     random.shuffle(image_files)
     
     if lda_alpha >= 100.0:
-        # IID 分割：簡單輪詢分配
+        # IID split: simple round-robin allocation
         print(f"[IID] Using round-robin split (alpha={lda_alpha})")
         file_chunks = [image_files[i::num_clients] for i in range(num_clients)]
         for i, chunk in enumerate(file_chunks):
             print(f"  Client {i+1}: {len(chunk)} images")
     else:
-        # Non-IID 分割：使用 Dirichlet 分割
+        # Non-IID split: using Dirichlet split
         print(f"[Non-IID] Using Dirichlet split (alpha={lda_alpha})")
         
-        # 根據資料集類型選擇標籤讀取方式
+        # Choose label reading method based on dataset type
         if is_coco:
-            # COCO 資料集：從 instances_train2017.json 讀取
+            # COCO dataset: read from instances_train2017.json
             coco_ann_path = project_root / "coco" / "annotations" / "instances_train2017.json"
             
             if not coco_ann_path.is_file():
@@ -185,10 +185,10 @@ def prepare_data(
             with open(coco_ann_path, 'r') as f:
                 coco_instances = json.load(f)
             
-            # 建立 image_id -> filename 對應
+            # Create image_id -> filename mapping
             image_id_to_filename = {img['id']: img['file_name'] for img in coco_instances['images']}
             
-            # 建立 image_id -> category_ids 對應（一張圖可能有多個物件）
+            # Create image_id -> category_ids mapping (one image may have multiple objects)
             image_to_categories = {}
             for ann in coco_instances['annotations']:
                 img_id = ann['image_id']
@@ -197,7 +197,7 @@ def prepare_data(
                     image_to_categories[img_id] = set()
                 image_to_categories[img_id].add(cat_id)
             
-            # 為每張圖片選擇主要類別（取最小的 category_id）
+            # Choose primary category for each image (take smallest category_id)
             filename_to_label = {}
             for img_id, filename in image_id_to_filename.items():
                 if img_id in image_to_categories:
@@ -205,7 +205,7 @@ def prepare_data(
                 else:
                     filename_to_label[filename] = 0
         else:
-            # 標準 YOLOv9 資料集（KITTI, SIM10K, Foggy, Cityscapes, BDD100K）：從 YOLO 格式標籤文件讀取
+            # Standard YOLOv9 datasets (KITTI, SIM10K, Foggy, Cityscapes, BDD100K): read from YOLO format label files
             print(f"[Non-IID] Reading labels from YOLO format files in {source_labels_dir}")
             filename_to_label = {}
             
@@ -214,21 +214,21 @@ def prepare_data(
                 label_file = source_labels_dir / f"{base_name}.txt"
                 
                 if label_file.exists():
-                    # 讀取 YOLO 格式標籤的第一行第一個數字（類別 ID）
+                    # Read first number from YOLO format label (class ID)
                     with open(label_file, 'r') as f:
                         lines = f.readlines()
                         if lines:
-                            # YOLO 格式: class_id x_center y_center width height
+                            # YOLO format: class_id x_center y_center width height
                             class_id = int(lines[0].split()[0])
                             filename_to_label[img_file] = class_id
                         else:
-                            # 空標籤文件，設為類別 0
+                            # Empty label file, set to class 0
                             filename_to_label[img_file] = 0
                 else:
-                    # 無標籤文件，設為類別 0
+                    # No label file, set to class 0
                     filename_to_label[img_file] = 0
         
-        # 準備給 FedML 的資料
+        # Prepare data for FedML
         images_list = []
         labels_list = []
         for img_file in image_files:
@@ -239,11 +239,11 @@ def prepare_data(
         num_classes = len(np.unique(labels_array))
         print(f"[Non-IID] Found {num_classes} unique classes in dataset")
         
-        # 使用 FedML 進行 Dirichlet 分割
+        # Use Dirichlet split
         print(f"[Non-IID] Partitioning with FedML split_data_dirichlet...")
         np.random.seed(seed)
         
-        # split_data_dirichlet 返回 dict: {client_id: [image_filenames]}
+        # split_data_dirichlet returns dict: {client_id: [image_filenames]}
         client_dict = split_data_dirichlet(
             images_list=images_list,
             labels_list=labels_list,
@@ -251,7 +251,7 @@ def prepare_data(
             alpha=lda_alpha
         )
         
-        # 轉換為 file_chunks 格式
+        # Convert to file_chunks format
         file_chunks = []
         for client_id in range(num_clients):
             client_files = client_dict[client_id]
@@ -335,13 +335,13 @@ def prepare_data(
             if coco_ann_path.is_file():
                 with open(coco_ann_path, 'r') as f:
                     coco_ann = json.load(f)
-                # 建立 image_id 對應表
+                # Build image_id map
                 image_id_map = {str(img['file_name']).split('.')[0]: img['id'] for img in coco_ann['images']}
                 client_image_ids = set([image_id_map[name] for name in client_image_names if name in image_id_map])
-                # 過濾 images/annotations
+                # Filter images/annotations
                 client_images = [img for img in coco_ann['images'] if img['id'] in client_image_ids]
                 client_annotations = [ann for ann in coco_ann['annotations'] if ann['image_id'] in client_image_ids]
-                # 寫出 client captions_train.json
+                # Write client captions_train.json
                 client_coco_ann = coco_ann.copy()
                 client_coco_ann['images'] = client_images
                 client_coco_ann['annotations'] = client_annotations

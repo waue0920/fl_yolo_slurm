@@ -59,11 +59,11 @@ fi
 
 MODEL_CFG="${WROOT}/yolov9/models/detect/yolov9-c.yaml"
 
-# --- 動態端口分配 (避免 NCCL port 衝突) ---
+# --- Dynamic port allocation (avoid NCCL port conflict) ---
 get_free_port() {
     while :; do
         PORT=$(( ( RANDOM % 50000 )  + 10000 ))
-        # 檢查 port 是否已被使用
+        # Check if port is already in use
         if ! lsof -i:"$PORT" >/dev/null 2>&1; then
             echo "$PORT"
             return
@@ -113,7 +113,6 @@ echo ">> Executing training command inside Singularity container..."
 
 singularity exec --nv \
     --bind ${WROOT}:${WROOT} \
-    --bind /home/waue0920/dataset/yolo:/home/waue0920/dataset/yolo \
     "${SINGULARITY_IMG}" \
 python \
     "${WROOT}/yolov9/train_dual.py" \
@@ -126,10 +125,10 @@ python \
     --exist-ok \
     ${EXTRA_ARGS} 
 
-###  因為不同client 會搶相同port 的問題，因此跨節點暫時無解
+###  Issue with different clients grabbing same port, cross-node temporarily unsolved
 # singularity exec --nv \
 #     --bind ${WROOT}:${WROOT} \
-#     --bind /home/waue0920/dataset/yolo:/home/waue0920/dataset/yolo \
+#     --bind /path/to/dataset/yolo:/path/to/dataset/yolo \
 #     "${SINGULARITY_IMG}" \
 # torchrun \
 #     --nproc_per_node=${NPROC_PER_NODE} \

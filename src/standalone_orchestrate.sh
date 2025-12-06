@@ -93,7 +93,7 @@ fi
 get_free_port() {
     while :; do
         PORT=$(( ( RANDOM % 50000 )  + 10000 ))
-        # 檢查 port 是否已被使用
+        # Check if port is already in use
         if ! lsof -i:"$PORT" >/dev/null 2>&1; then
             echo "$PORT"
             return

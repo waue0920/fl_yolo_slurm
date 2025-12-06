@@ -2,7 +2,7 @@
 #
 # Shell Script to Submit Federated Aggregation Job for a Specific Round
 #
-# 依 fl_server_fedavg.sh 結構，支援多聚合演算法
+# Follows fl_server_fedavg.sh structure, supports multiple algorithms
 
 
 set -e

@@ -9,7 +9,7 @@
 set -e
 set -o pipefail
 
-# # 先 source 專案根目錄的 env.sh
+# # Source project root env.sh first
 # source "${WROOT}/src/env.sh"
 
 # --- 1. Argument Parsing ---

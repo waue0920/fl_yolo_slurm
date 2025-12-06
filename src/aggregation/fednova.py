@@ -8,10 +8,10 @@ def aggregate(client_weights, client_steps, server_weights):
     lr = float(os.environ.get('SERVER_FEDNOVA_LR', 1.0))
     n_total = sum(client_steps)
     d_fednova = OrderedDict()
-    # 初始化 d_fednova 為 float 型態
+    # Initialize d_fednova as float type
     for k in server_weights.keys():
         d_fednova[k] = torch.zeros_like(server_weights[k], dtype=torch.float32)
-    # 聚合
+    # Aggregate
     for wi, ni in zip(client_weights, client_steps):
         for k in server_weights.keys():
             di = wi[k] - server_weights[k]
